@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#050505">
     <title>SkinBuddy</title>
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="stylesheet" href="styles.css?v=11">
+    <link rel="stylesheet" href="styles.css?v=12">
   </head>
   <body>
     <div class="app-shell">
@@ -50,6 +50,7 @@
           <button class="tab is-active" type="button" data-view="today">Today</button>
           <button class="tab" type="button" data-view="schedule">Schedule</button>
           <button class="tab" type="button" data-view="products">Products</button>
+          <button class="tab" type="button" data-view="settings">Settings</button>
         </nav>
 
         <section class="view is-active" id="todayView" aria-label="Today routines">
@@ -66,6 +67,21 @@
             <strong>Day complete</strong>
             <span>All routines for today are logged.</span>
           </div>
+          <div id="routineList" class="routine-list"></div>
+        </section>
+
+        <section class="view" id="scheduleView" aria-label="Weekly schedule">
+          <div class="week-grid" id="weekGrid"></div>
+        </section>
+
+        <section class="view" id="productsView" aria-label="Product library">
+          <div class="filter-row">
+            <input id="productSearch" type="search" placeholder="Search products" aria-label="Search products">
+          </div>
+          <div id="productList" class="product-list"></div>
+        </section>
+
+        <section class="view" id="settingsView" aria-label="Settings">
           <section class="reminder-panel" aria-label="Smart reminders">
             <div class="reminder-head">
               <div>
@@ -97,18 +113,6 @@
               </label>
             </div>
           </section>
-          <div id="routineList" class="routine-list"></div>
-        </section>
-
-        <section class="view" id="scheduleView" aria-label="Weekly schedule">
-          <div class="week-grid" id="weekGrid"></div>
-        </section>
-
-        <section class="view" id="productsView" aria-label="Product library">
-          <div class="filter-row">
-            <input id="productSearch" type="search" placeholder="Search products" aria-label="Search products">
-          </div>
-          <div id="productList" class="product-list"></div>
         </section>
       </main>
 
@@ -128,6 +132,6 @@
       </div>
     </div>
 
-    <script src="app.js?v=11"></script>
+    <script src="app.js?v=12"></script>
   </body>
 </html>

@@ -279,6 +279,9 @@ const els = {
   categoryFilters: document.querySelector("#categoryFilters"),
   productList: document.querySelector("#productList"),
   productSearch: document.querySelector("#productSearch"),
+  newProductName: document.querySelector("#newProductName"),
+  newProductCategory: document.querySelector("#newProductCategory"),
+  addProduct: document.querySelector("#addProduct"),
   routineSheet: document.querySelector("#routineSheet"),
   sheetTitle: document.querySelector("#sheetTitle"),
   sheetTime: document.querySelector("#sheetTime"),
@@ -318,6 +321,7 @@ function cloneStep(routineStep) {
     action: routineStep.action || "Step",
     product: routineStep.product || "Custom product",
     application: routineStep.application || "Apply as directed.",
+    category: categoryForProduct(routineStep.product, routineStep.category),
     ...(routineStep.nuance ? { nuance: routineStep.nuance } : {}),
     ...(routineStep.timerSeconds ? { timerSeconds: routineStep.timerSeconds, timerLabel: routineStep.timerLabel || formatTimerLabel(routineStep.timerSeconds) } : {})
   };
@@ -328,7 +332,8 @@ function cleanRoutineStep(routineStep) {
   const clean = {
     action: String(routineStep.action || "").trim() || "Step",
     product: String(routineStep.product || "").trim() || "Custom product",
-    application: String(routineStep.application || "").trim() || "Apply as directed."
+    application: String(routineStep.application || "").trim() || "Apply as directed.",
+    category: categoryForProduct(routineStep.product, routineStep.category)
   };
   const nuance = String(routineStep.nuance || "").trim();
   if (nuance) clean.nuance = nuance;
@@ -833,10 +838,12 @@ function renderSchedule() {
 
 function productLibrary() {
   const notes = new Map();
+  const categories = new Map();
   const collect = (routine) => {
     routine.steps.forEach((routineStep) => {
       if (!notes.has(routineStep.product)) notes.set(routineStep.product, new Set());
       notes.get(routineStep.product).add(routine.title || routine.day);
+      categories.set(routineStep.product, categoryForProduct(routineStep.product, routineStep.category));
     });
   };
   Object.values(routines).forEach(collect);
@@ -844,13 +851,81 @@ function productLibrary() {
   Object.values(loadRoutineOverrides()).forEach((override) => {
     if (Array.isArray(override.steps)) collect({ title: "Edited routine", steps: override.steps.map(cleanRoutineStep) });
   });
+  loadCustomProducts().forEach((product) => {
+    if (!notes.has(product.name)) notes.set(product.name, new Set());
+    notes.get(product.name).add("Product library");
+    categories.set(product.name, product.category);
+  });
   return [...notes.entries()].map(([name, appearances]) => ({
     name,
     displayName: productDisplayName(name),
-    category: productCategories[name] || "Routine product",
+    category: categories.get(name) || categoryForProduct(name),
     appearances: [...appearances],
-    replacement: productReplacement(name)
+    replacement: productReplacement(name),
+    custom: isCustomProduct(name)
   }));
+}
+
+function customProductsKey() {
+  return "skinbuddy:custom-products";
+}
+
+function loadCustomProducts() {
+  try {
+    const products = JSON.parse(localStorage.getItem(customProductsKey()) || "[]");
+    if (!Array.isArray(products)) return [];
+    return products
+      .map((product) => ({
+        name: String(product.name || "").trim(),
+        category: String(product.category || "Routine product").trim() || "Routine product"
+      }))
+      .filter((product) => product.name);
+  } catch {
+    return [];
+  }
+}
+
+function saveCustomProducts(products) {
+  localStorage.setItem(customProductsKey(), JSON.stringify(products));
+}
+
+function isCustomProduct(name) {
+  return loadCustomProducts().some((product) => product.name === name);
+}
+
+function customProductCategory(name) {
+  return loadCustomProducts().find((product) => product.name === name)?.category || "";
+}
+
+function categoryForProduct(name, fallback = "") {
+  return productCategories[name] || customProductCategory(name) || fallback || "Routine product";
+}
+
+function addCustomProduct(name, category) {
+  const cleanName = name.trim();
+  if (!cleanName) return;
+  const products = loadCustomProducts().filter((product) => product.name.toLowerCase() !== cleanName.toLowerCase());
+  products.push({ name: cleanName, category: category || "Routine product" });
+  saveCustomProducts(products.sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name)));
+}
+
+function deleteCustomProduct(name) {
+  saveCustomProducts(loadCustomProducts().filter((product) => product.name !== name));
+}
+
+function productOptionsForCategory(category, currentProduct = "") {
+  const options = productLibrary()
+    .filter((item) => item.category === category)
+    .map((item) => item.name)
+    .sort((a, b) => a.localeCompare(b));
+  if (currentProduct && !options.includes(currentProduct)) options.unshift(currentProduct);
+  return options;
+}
+
+function selectOptions(options, selected) {
+  return options
+    .map((option) => `<option value="${escapeHtml(option)}"${option === selected ? " selected" : ""}>${escapeHtml(option)}</option>`)
+    .join("");
 }
 
 function productOverridesKey() {
@@ -890,6 +965,17 @@ function productCategoriesList() {
   return ["All", ...new Set(productLibrary().map((item) => item.category).sort((a, b) => a.localeCompare(b)))];
 }
 
+function editableProductCategories() {
+  return productCategoriesList().filter((category) => category !== "All");
+}
+
+function renderAddProductControls() {
+  const current = els.newProductCategory.value || selectedProductCategory;
+  const categories = editableProductCategories();
+  if (!categories.includes(current) && current !== "All") categories.push(current);
+  els.newProductCategory.innerHTML = selectOptions(categories.sort((a, b) => a.localeCompare(b)), current === "All" ? categories[0] : current);
+}
+
 function renderCategoryFilters() {
   els.categoryFilters.innerHTML = "";
   productCategoriesList().forEach((category) => {
@@ -905,6 +991,7 @@ function renderCategoryFilters() {
 function renderProducts() {
   const query = els.productSearch.value.trim().toLowerCase();
   renderCategoryFilters();
+  renderAddProductControls();
   els.productList.innerHTML = "";
   productLibrary()
     .filter((item) => selectedProductCategory === "All" || item.category === selectedProductCategory)
@@ -922,9 +1009,10 @@ function renderProducts() {
           </div>
         </div>
         <div class="swap-row">
-          <input type="text" value="${escapeHtml(item.replacement)}" placeholder="Swap product" aria-label="Swap ${escapeHtml(item.name)}" data-product-input>
+          <input type="text" value="${escapeHtml(item.replacement)}" placeholder="Display as" aria-label="Display ${escapeHtml(item.name)} as" data-product-input>
           <button class="secondary-action" type="button" data-save-product="${escapeHtml(item.name)}">Save</button>
           <button class="secondary-action quiet" type="button" data-reset-product="${escapeHtml(item.name)}">Reset</button>
+          ${item.custom ? `<button class="secondary-action quiet" type="button" data-delete-product="${escapeHtml(item.name)}">Delete</button>` : ""}
         </div>
       `;
       els.productList.append(card);
@@ -1042,7 +1130,7 @@ function renderSteps(routine) {
       <div class="step-body">
         <div class="step-title">
           <strong>${index + 1}. ${routineStep.action}</strong>
-          <span class="badge">${productCategories[routineStep.product] || "Step"}</span>
+          <span class="badge">${escapeHtml(categoryForProduct(routineStep.product, routineStep.category))}</span>
         </div>
         <p class="step-text"><strong>${escapeHtml(displayProduct)}</strong>${replacementNote}<br>${escapeHtml(routineStep.application)}</p>
         ${routineStep.nuance ? `<p class="step-note">${escapeHtml(routineStep.nuance)}</p>` : ""}
@@ -1076,6 +1164,10 @@ function createRoutineEditRow(routineStep, index, totalSteps) {
   const row = document.createElement("article");
   row.className = "routine-edit-step";
   row.dataset.editIndex = index;
+  const currentCategory = categoryForProduct(routineStep.product, routineStep.category);
+  const categoryOptions = editableProductCategories();
+  if (!categoryOptions.includes(currentCategory)) categoryOptions.push(currentCategory);
+  const productOptions = productOptionsForCategory(currentCategory, routineStep.product);
   row.innerHTML = `
     <div class="edit-step-head">
       <strong>Step ${index + 1}</strong>
@@ -1086,8 +1178,12 @@ function createRoutineEditRow(routineStep, index, totalSteps) {
       <input type="text" value="${escapeHtml(routineStep.action)}" data-edit-field="action">
     </label>
     <label>
+      <span>Category</span>
+      <select data-edit-field="category">${selectOptions(categoryOptions.sort((a, b) => a.localeCompare(b)), currentCategory)}</select>
+    </label>
+    <label>
       <span>Product</span>
-      <input type="text" value="${escapeHtml(routineStep.product)}" data-edit-field="product">
+      <select data-edit-field="product">${selectOptions(productOptions, routineStep.product)}</select>
     </label>
     <label>
       <span>Application</span>
@@ -1111,11 +1207,21 @@ function collectRoutineEditorSteps() {
     return cleanRoutineStep({
       action: field("action"),
       product: field("product"),
+      category: field("category"),
       application: field("application"),
       nuance: field("nuance"),
       timerSeconds: Number(field("timerMinutes") || 0) * 60
     });
   });
+}
+
+function updateRoutineEditorProductSelect(row) {
+  const category = row.querySelector('[data-edit-field="category"]')?.value || "Routine product";
+  const productSelect = row.querySelector('[data-edit-field="product"]');
+  if (!productSelect) return;
+  const currentProduct = productSelect.value;
+  const options = productOptionsForCategory(category, currentProduct);
+  productSelect.innerHTML = selectOptions(options, options.includes(currentProduct) ? currentProduct : options[0]);
 }
 
 function saveRoutineEdits() {
@@ -1308,6 +1414,7 @@ document.addEventListener("click", (event) => {
   const categoryButton = event.target.closest("[data-category]");
   const saveProductButton = event.target.closest("[data-save-product]");
   const resetProductButton = event.target.closest("[data-reset-product]");
+  const deleteProductButton = event.target.closest("[data-delete-product]");
   const addEditStepButton = event.target.closest("[data-add-edit-step]");
   const deleteEditStepButton = event.target.closest("[data-delete-edit-step]");
   const cancelRoutineEditButton = event.target.closest("[data-cancel-routine-edit]");
@@ -1327,6 +1434,10 @@ document.addEventListener("click", (event) => {
   }
   if (resetProductButton) {
     setProductReplacement(resetProductButton.dataset.resetProduct, "");
+    refresh();
+  }
+  if (deleteProductButton) {
+    deleteCustomProduct(deleteProductButton.dataset.deleteProduct);
     refresh();
   }
   if (openButton) openRoutine(openButton.dataset.open, openButton.dataset.date || todayKey());
@@ -1373,6 +1484,20 @@ els.routineSheet.addEventListener("click", (event) => {
   if (event.target === els.routineSheet) closeRoutine();
 });
 els.productSearch.addEventListener("input", renderProducts);
+els.addProduct.addEventListener("click", () => {
+  addCustomProduct(els.newProductName.value, els.newProductCategory.value);
+  els.newProductName.value = "";
+  refresh();
+});
+els.newProductCategory.addEventListener("change", () => {
+  selectedProductCategory = els.newProductCategory.value;
+  renderProducts();
+});
+document.addEventListener("change", (event) => {
+  if (event.target.matches('[data-edit-field="category"]')) {
+    updateRoutineEditorProductSelect(event.target.closest(".routine-edit-step"));
+  }
+});
 els.todayGymToggle.addEventListener("change", () => {
   const dayKey = getDayKey(activeSkincareDate());
   if (isWeekend(dayKey)) setGymDay(dayKey, els.todayGymToggle.checked);

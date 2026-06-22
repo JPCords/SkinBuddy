@@ -38,6 +38,7 @@ body {
 
 button,
 input,
+select,
 textarea {
   font: inherit;
 }
@@ -561,7 +562,27 @@ h3 {
   margin-bottom: 12px;
 }
 
-.filter-row input {
+.add-product-panel {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 244, 214, 0.04), rgba(255, 244, 214, 0)),
+    var(--surface);
+  padding: 14px;
+}
+
+.add-product-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(120px, auto) auto;
+  gap: 8px;
+}
+
+.filter-row input,
+.add-product-grid input,
+.add-product-grid select {
   width: 100%;
   min-height: 46px;
   border: 1px solid var(--line);
@@ -572,7 +593,13 @@ h3 {
   outline: 0;
 }
 
-.filter-row input:focus {
+.add-product-grid select {
+  color: var(--gold-soft);
+}
+
+.filter-row input:focus,
+.add-product-grid input:focus,
+.add-product-grid select:focus {
   border-color: var(--gold);
   box-shadow: 0 0 0 3px rgba(216, 184, 112, 0.14);
 }
@@ -610,7 +637,7 @@ h3 {
 
 .swap-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
   gap: 8px;
   margin-top: 12px;
 }
@@ -624,6 +651,10 @@ h3 {
   color: var(--ink);
   padding: 0 12px;
   outline: 0;
+}
+
+.swap-row .secondary-action {
+  padding: 0 12px;
 }
 
 .swap-row input:focus {
@@ -693,6 +724,7 @@ h3 {
 }
 
 .routine-edit-step input,
+.routine-edit-step select,
 .routine-edit-step textarea {
   width: 100%;
   min-width: 0;
@@ -710,6 +742,7 @@ h3 {
 }
 
 .routine-edit-step input:focus,
+.routine-edit-step select:focus,
 .routine-edit-step textarea:focus {
   border-color: var(--gold);
   box-shadow: 0 0 0 3px rgba(216, 184, 112, 0.14);
@@ -891,6 +924,13 @@ h3 {
   color: var(--muted);
   font-size: 0.74rem;
   line-height: 1.35;
+}
+
+@media (max-width: 430px) {
+  .add-product-grid,
+  .swap-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (min-width: 760px) {

@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#050505">
     <title>SkinBuddy</title>
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="stylesheet" href="styles.css?v=18">
+    <link rel="stylesheet" href="styles.css?v=21">
   </head>
   <body>
     <div class="app-shell">
@@ -49,6 +49,7 @@
         <nav class="segment-tabs" aria-label="Routine sections">
           <button class="tab is-active" type="button" data-view="today">Today</button>
           <button class="tab" type="button" data-view="schedule">Schedule</button>
+          <button class="tab" type="button" data-view="history">History</button>
           <button class="tab" type="button" data-view="products">Products</button>
           <button class="tab" type="button" data-view="settings">Settings</button>
         </nav>
@@ -72,6 +73,33 @@
 
         <section class="view" id="scheduleView" aria-label="Weekly schedule">
           <div class="week-grid" id="weekGrid"></div>
+        </section>
+
+        <section class="view" id="historyView" aria-label="Calendar history">
+          <section class="history-panel">
+            <div class="history-head">
+              <div>
+                <p class="eyebrow">Calendar history</p>
+                <h3 id="historyMonthLabel">This month</h3>
+              </div>
+              <div class="history-actions">
+                <button class="secondary-action quiet" id="historyPrev" type="button">Prev</button>
+                <button class="secondary-action quiet" id="historyToday" type="button">Today</button>
+                <button class="secondary-action quiet" id="historyNext" type="button">Next</button>
+              </div>
+            </div>
+            <div class="history-summary" id="historySummary"></div>
+            <div class="calendar-weekdays" aria-hidden="true">
+              <span>Mon</span>
+              <span>Tue</span>
+              <span>Wed</span>
+              <span>Thu</span>
+              <span>Fri</span>
+              <span>Sat</span>
+              <span>Sun</span>
+            </div>
+            <div class="calendar-grid" id="historyGrid"></div>
+          </section>
         </section>
 
         <section class="view" id="productsView" aria-label="Product library">
@@ -148,6 +176,6 @@
       </div>
     </div>
 
-    <script src="app.js?v=18"></script>
+    <script src="app.js?v=21"></script>
   </body>
 </html>

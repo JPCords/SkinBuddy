@@ -252,6 +252,7 @@ let selectedRoutine = null;
 let selectedDateKey = null;
 let selectedProductCategory = "All";
 let routineEditMode = false;
+let historyCursor = new Date();
 let installPrompt = null;
 let timerInterval = null;
 const reminderTimeouts = new Map();
@@ -276,6 +277,12 @@ const els = {
   timerAlertState: document.querySelector("#timerAlertState"),
   routineList: document.querySelector("#routineList"),
   weekGrid: document.querySelector("#weekGrid"),
+  historyMonthLabel: document.querySelector("#historyMonthLabel"),
+  historySummary: document.querySelector("#historySummary"),
+  historyGrid: document.querySelector("#historyGrid"),
+  historyPrev: document.querySelector("#historyPrev"),
+  historyToday: document.querySelector("#historyToday"),
+  historyNext: document.querySelector("#historyNext"),
   categoryFilters: document.querySelector("#categoryFilters"),
   productList: document.querySelector("#productList"),
   productSearch: document.querySelector("#productSearch"),
@@ -834,6 +841,84 @@ function renderSchedule() {
     card.addEventListener("click", () => openDay(scheduleDateKey));
     els.weekGrid.append(card);
   });
+}
+
+function monthStart(date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function monthEnd(date) {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+}
+
+function monthGridDates(date) {
+  const start = monthStart(date);
+  const end = monthEnd(date);
+  const leadDays = (start.getDay() + 6) % 7;
+  const gridStart = addDays(start, -leadDays);
+  const totalDays = leadDays + end.getDate();
+  const visibleDays = Math.ceil(totalDays / 7) * 7;
+  return Array.from({ length: visibleDays }, (_, index) => addDays(gridStart, index));
+}
+
+function historyStatus(key, progress) {
+  if (progress.total > 0 && progress.done === progress.total) return "complete";
+  if (progress.done > 0) return "partial";
+  if (key < firstActiveKey()) return "empty";
+  if (key < todayKey()) return "missed";
+  if (key === todayKey()) return "today";
+  return "upcoming";
+}
+
+function historyStatusLabel(status) {
+  return {
+    complete: "Complete",
+    partial: "Partial",
+    missed: "Missed",
+    today: "Today",
+    upcoming: "Upcoming",
+    empty: "No data"
+  }[status];
+}
+
+function renderHistory() {
+  const cursor = monthStart(historyCursor);
+  const monthDates = monthGridDates(cursor);
+  const monthKey = cursor.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const currentMonth = cursor.getMonth();
+  const stats = {
+    complete: 0,
+    partial: 0,
+    missed: 0
+  };
+
+  els.historyMonthLabel.textContent = monthKey;
+  els.historyGrid.innerHTML = "";
+
+  monthDates.forEach((date) => {
+    const key = dateKey(date);
+    const progress = dayProgress(key);
+    const status = historyStatus(key, progress);
+    const inMonth = date.getMonth() === currentMonth;
+    if (inMonth && stats[status] !== undefined) stats[status] += 1;
+
+    const button = document.createElement("button");
+    button.className = `calendar-day ${status}${inMonth ? "" : " is-outside"}${key === activeSkincareDayKey() ? " is-active-day" : ""}`;
+    button.type = "button";
+    button.dataset.historyDate = key;
+    button.innerHTML = `
+      <strong>${date.getDate()}</strong>
+      <span>${progress.done}/${progress.total}</span>
+      <small>${historyStatusLabel(status)}</small>
+    `;
+    els.historyGrid.append(button);
+  });
+
+  els.historySummary.innerHTML = `
+    <span><strong>${stats.complete}</strong> complete</span>
+    <span><strong>${stats.partial}</strong> partial</span>
+    <span><strong>${stats.missed}</strong> missed</span>
+  `;
 }
 
 function productLibrary() {
@@ -1424,6 +1509,7 @@ function refresh() {
   renderHero();
   renderToday();
   renderSchedule();
+  renderHistory();
   renderProducts();
   renderReminderControls();
   updateStats();
@@ -1443,12 +1529,14 @@ document.addEventListener("click", (event) => {
   const deleteEditStepButton = event.target.closest("[data-delete-edit-step]");
   const moveEditStepButton = event.target.closest("[data-move-edit-step]");
   const cancelRoutineEditButton = event.target.closest("[data-cancel-routine-edit]");
+  const historyDayButton = event.target.closest("[data-history-date]");
   const tabButton = event.target.closest("[data-view]");
 
   if (addEditStepButton) addRoutineEditStep(els.stepList.querySelector("[data-add-step-position]")?.value || 0);
   if (deleteEditStepButton) deleteRoutineEditStep(Number(deleteEditStepButton.dataset.deleteEditStep));
   if (moveEditStepButton) moveRoutineEditStep(Number(moveEditStepButton.dataset.moveEditStep), Number(moveEditStepButton.dataset.direction));
   if (cancelRoutineEditButton) cancelRoutineEdit();
+  if (historyDayButton) openDay(historyDayButton.dataset.historyDate);
   if (categoryButton) {
     selectedProductCategory = categoryButton.dataset.category;
     renderProducts();
@@ -1510,6 +1598,18 @@ els.routineSheet.addEventListener("click", (event) => {
   if (event.target === els.routineSheet) closeRoutine();
 });
 els.productSearch.addEventListener("input", renderProducts);
+els.historyPrev.addEventListener("click", () => {
+  historyCursor = new Date(historyCursor.getFullYear(), historyCursor.getMonth() - 1, 1);
+  renderHistory();
+});
+els.historyToday.addEventListener("click", () => {
+  historyCursor = new Date();
+  renderHistory();
+});
+els.historyNext.addEventListener("click", () => {
+  historyCursor = new Date(historyCursor.getFullYear(), historyCursor.getMonth() + 1, 1);
+  renderHistory();
+});
 els.addProduct.addEventListener("click", () => {
   addCustomProduct(els.newProductName.value, els.newProductCategory.value);
   els.newProductName.value = "";

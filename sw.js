@@ -1,9 +1,9 @@
-const CACHE_NAME = "skinbuddy-v18";
+const CACHE_NAME = "skinbuddy-v21";
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=18",
-  "./app.js?v=18",
+  "./styles.css?v=21",
+  "./app.js?v=21",
   "./manifest.webmanifest",
   "./assets/icon.svg",
   "./assets/skincare-banner.png"

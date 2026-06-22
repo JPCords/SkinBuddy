@@ -710,12 +710,25 @@ h3 {
   font-size: 0.92rem;
 }
 
+.edit-step-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.edit-step-actions .secondary-action {
+  min-height: 34px;
+  padding: 0 10px;
+}
+
 .routine-edit-step label {
   display: grid;
   gap: 6px;
 }
 
-.routine-edit-step label span {
+.routine-edit-step label span,
+.insert-control span {
   color: var(--muted);
   font-size: 0.72rem;
   font-weight: 900;
@@ -750,8 +763,30 @@ h3 {
 
 .edit-footer {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: end;
   gap: 8px;
+}
+
+.insert-control {
+  display: grid;
+  gap: 6px;
+}
+
+.insert-control select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid rgba(216, 184, 112, 0.22);
+  border-radius: 8px;
+  background: #090807;
+  color: var(--ink);
+  padding: 0 11px;
+  outline: 0;
+}
+
+.insert-control select:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(216, 184, 112, 0.14);
 }
 
 .routine-sheet {
@@ -928,8 +963,23 @@ h3 {
 
 @media (max-width: 430px) {
   .add-product-grid,
+  .edit-footer,
   .swap-row {
     grid-template-columns: 1fr;
+  }
+
+  .edit-step-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .edit-step-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .edit-step-actions .secondary-action {
+    flex: 1;
   }
 }
 

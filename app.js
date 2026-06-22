@@ -1153,8 +1153,16 @@ function renderRoutineEditor(routine) {
 
   const actions = document.createElement("div");
   actions.className = "edit-footer";
+  const positionOptions = Array.from({ length: routine.steps.length + 1 }, (_, index) => {
+    const label = index === routine.steps.length ? `After step ${routine.steps.length}` : `Before step ${index + 1}`;
+    return `<option value="${index}"${index === routine.steps.length ? " selected" : ""}>${label}</option>`;
+  }).join("");
   actions.innerHTML = `
-    <button class="secondary-action" type="button" data-add-edit-step>Add step</button>
+    <label class="insert-control">
+      <span>Insert step</span>
+      <select data-add-step-position>${positionOptions}</select>
+    </label>
+    <button class="secondary-action" type="button" data-add-edit-step>Add</button>
     <button class="secondary-action quiet" type="button" data-cancel-routine-edit>Cancel</button>
   `;
   els.stepList.append(actions);
@@ -1171,7 +1179,11 @@ function createRoutineEditRow(routineStep, index, totalSteps) {
   row.innerHTML = `
     <div class="edit-step-head">
       <strong>Step ${index + 1}</strong>
-      <button class="secondary-action quiet" type="button" data-delete-edit-step="${index}" ${totalSteps <= 1 ? "disabled" : ""}>Delete</button>
+      <div class="edit-step-actions">
+        <button class="secondary-action quiet" type="button" data-move-edit-step="${index}" data-direction="-1" ${index === 0 ? "disabled" : ""}>Up</button>
+        <button class="secondary-action quiet" type="button" data-move-edit-step="${index}" data-direction="1" ${index === totalSteps - 1 ? "disabled" : ""}>Down</button>
+        <button class="secondary-action quiet" type="button" data-delete-edit-step="${index}" ${totalSteps <= 1 ? "disabled" : ""}>Delete</button>
+      </div>
     </div>
     <label>
       <span>Action</span>
@@ -1251,15 +1263,27 @@ function rebuildRoutineEditor(nextSteps) {
   renderSteps(selectedRoutine);
 }
 
-function addRoutineEditStep() {
+function addRoutineEditStep(position) {
   const nextSteps = collectRoutineEditorSteps();
-  nextSteps.push(cleanRoutineStep({ action: "New step", product: "Custom product", application: "Apply as directed." }));
+  const insertAt = Math.max(0, Math.min(Number(position), nextSteps.length));
+  const firstCategory = editableProductCategories()[0] || "Routine product";
+  const firstProduct = productOptionsForCategory(firstCategory)[0] || "Custom product";
+  nextSteps.splice(insertAt, 0, cleanRoutineStep({ action: "New step", product: firstProduct, category: firstCategory, application: "Apply as directed." }));
   rebuildRoutineEditor(nextSteps);
 }
 
 function deleteRoutineEditStep(index) {
   const nextSteps = collectRoutineEditorSteps();
   nextSteps.splice(index, 1);
+  rebuildRoutineEditor(nextSteps);
+}
+
+function moveRoutineEditStep(index, direction) {
+  const nextSteps = collectRoutineEditorSteps();
+  const target = index + direction;
+  if (target < 0 || target >= nextSteps.length) return;
+  const [movedStep] = nextSteps.splice(index, 1);
+  nextSteps.splice(target, 0, movedStep);
   rebuildRoutineEditor(nextSteps);
 }
 
@@ -1417,11 +1441,13 @@ document.addEventListener("click", (event) => {
   const deleteProductButton = event.target.closest("[data-delete-product]");
   const addEditStepButton = event.target.closest("[data-add-edit-step]");
   const deleteEditStepButton = event.target.closest("[data-delete-edit-step]");
+  const moveEditStepButton = event.target.closest("[data-move-edit-step]");
   const cancelRoutineEditButton = event.target.closest("[data-cancel-routine-edit]");
   const tabButton = event.target.closest("[data-view]");
 
-  if (addEditStepButton) addRoutineEditStep();
+  if (addEditStepButton) addRoutineEditStep(els.stepList.querySelector("[data-add-step-position]")?.value || 0);
   if (deleteEditStepButton) deleteRoutineEditStep(Number(deleteEditStepButton.dataset.deleteEditStep));
+  if (moveEditStepButton) moveRoutineEditStep(Number(moveEditStepButton.dataset.moveEditStep), Number(moveEditStepButton.dataset.direction));
   if (cancelRoutineEditButton) cancelRoutineEdit();
   if (categoryButton) {
     selectedProductCategory = categoryButton.dataset.category;

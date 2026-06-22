@@ -251,6 +251,7 @@ const reminderDefinitions = {
 let selectedRoutine = null;
 let selectedDateKey = null;
 let selectedProductCategory = "All";
+let routineEditMode = false;
 let installPrompt = null;
 let timerInterval = null;
 const reminderTimeouts = new Map();
@@ -283,6 +284,8 @@ const els = {
   sheetTime: document.querySelector("#sheetTime"),
   sheetWarnings: document.querySelector("#sheetWarnings"),
   stepList: document.querySelector("#stepList"),
+  editRoutine: document.querySelector("#editRoutine"),
+  resetRoutineEdits: document.querySelector("#resetRoutineEdits"),
   closeSheet: document.querySelector("#closeSheet"),
   installButton: document.querySelector("#installButton")
 };
@@ -308,6 +311,84 @@ function escapeHtml(value) {
     };
     return entities[character];
   });
+}
+
+function cloneStep(routineStep) {
+  return {
+    action: routineStep.action || "Step",
+    product: routineStep.product || "Custom product",
+    application: routineStep.application || "Apply as directed.",
+    ...(routineStep.nuance ? { nuance: routineStep.nuance } : {}),
+    ...(routineStep.timerSeconds ? { timerSeconds: routineStep.timerSeconds, timerLabel: routineStep.timerLabel || formatTimerLabel(routineStep.timerSeconds) } : {})
+  };
+}
+
+function cleanRoutineStep(routineStep) {
+  const seconds = Math.max(0, Math.round(Number(routineStep.timerSeconds || 0)));
+  const clean = {
+    action: String(routineStep.action || "").trim() || "Step",
+    product: String(routineStep.product || "").trim() || "Custom product",
+    application: String(routineStep.application || "").trim() || "Apply as directed."
+  };
+  const nuance = String(routineStep.nuance || "").trim();
+  if (nuance) clean.nuance = nuance;
+  if (seconds) {
+    clean.timerSeconds = seconds;
+    clean.timerLabel = formatTimerLabel(seconds);
+  }
+  return clean;
+}
+
+function routineOverridesKey() {
+  return "skinbuddy:routine-overrides";
+}
+
+function loadRoutineOverrides() {
+  try {
+    const overrides = JSON.parse(localStorage.getItem(routineOverridesKey()) || "{}");
+    return overrides && typeof overrides === "object" ? overrides : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveRoutineOverrides(overrides) {
+  localStorage.setItem(routineOverridesKey(), JSON.stringify(overrides));
+}
+
+function routineOverride(routineId) {
+  return loadRoutineOverrides()[routineId] || null;
+}
+
+function hasRoutineOverride(routineId) {
+  return Boolean(routineOverride(routineId));
+}
+
+function setRoutineOverride(routineId, steps) {
+  const overrides = loadRoutineOverrides();
+  overrides[routineId] = { steps: steps.map(cleanRoutineStep) };
+  saveRoutineOverrides(overrides);
+}
+
+function clearRoutineOverride(routineId) {
+  const overrides = loadRoutineOverrides();
+  delete overrides[routineId];
+  saveRoutineOverrides(overrides);
+}
+
+function applyRoutineOverride(routine) {
+  const override = routineOverride(routine.id);
+  if (!override || !Array.isArray(override.steps) || !override.steps.length) {
+    return {
+      ...routine,
+      steps: routine.steps.map(cloneStep)
+    };
+  }
+  return {
+    ...routine,
+    steps: override.steps.map(cleanRoutineStep),
+    isEdited: true
+  };
 }
 
 function dateKey(date) {
@@ -426,8 +507,8 @@ function getNightRoutine(date = new Date()) {
 
 function getDayRoutines(date = new Date()) {
   const dayKey = getDayKey(date);
-  if (isGymDay(date)) return [routines.preGym, routines.postGym, getNightRoutine(date)];
-  return [weekendMorningRoutine(dayKey), getNightRoutine(date)];
+  const list = isGymDay(date) ? [routines.preGym, routines.postGym, getNightRoutine(date)] : [weekendMorningRoutine(dayKey), getNightRoutine(date)];
+  return list.map(applyRoutineOverride);
 }
 
 function getTodayRoutines() {
@@ -760,6 +841,9 @@ function productLibrary() {
   };
   Object.values(routines).forEach(collect);
   Object.values(nightSchedule).forEach((item) => collect({ title: item.day, steps: item.steps }));
+  Object.values(loadRoutineOverrides()).forEach((override) => {
+    if (Array.isArray(override.steps)) collect({ title: "Edited routine", steps: override.steps.map(cleanRoutineStep) });
+  });
   return [...notes.entries()].map(([name, appearances]) => ({
     name,
     displayName: productDisplayName(name),
@@ -857,8 +941,10 @@ function openDay(key) {
   const dayKey = getDayKey(date);
   selectedRoutine = null;
   selectedDateKey = key;
+  routineEditMode = false;
   els.sheetTitle.textContent = `${nightSchedule[dayKey].day} Routines`;
   els.sheetTime.textContent = date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  updateRoutineEditControls();
   renderWarnings({
     warnings: isGymDay(date)
       ? ["Gym day is on, so this day includes Pre-Gym, Post-Gym / Pre-Work, and Night Routine."]
@@ -904,8 +990,10 @@ function renderDayRoutineCards(key) {
 function openRoutine(id, key = todayKey()) {
   selectedRoutine = routineById(id, key);
   selectedDateKey = key;
+  routineEditMode = false;
   els.sheetTitle.textContent = selectedRoutine.title;
   els.sheetTime.textContent = `${selectedRoutine.time} - ${dateFromKey(key).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+  updateRoutineEditControls(selectedRoutine);
   renderWarnings(selectedRoutine);
   renderSteps(selectedRoutine);
   els.routineSheet.classList.add("is-open");
@@ -913,8 +1001,17 @@ function openRoutine(id, key = todayKey()) {
 }
 
 function closeRoutine() {
+  routineEditMode = false;
+  updateRoutineEditControls();
   els.routineSheet.classList.remove("is-open");
   els.routineSheet.setAttribute("aria-hidden", "true");
+}
+
+function updateRoutineEditControls(routine = selectedRoutine) {
+  const hasRoutine = Boolean(routine);
+  els.editRoutine.hidden = !hasRoutine;
+  els.resetRoutineEdits.hidden = !hasRoutine || !hasRoutineOverride(routine.id);
+  els.editRoutine.textContent = routineEditMode ? "Save" : "Edit";
 }
 
 function renderWarnings(routine) {
@@ -929,6 +1026,11 @@ function renderWarnings(routine) {
 
 function renderSteps(routine) {
   els.stepList.innerHTML = "";
+  updateRoutineEditControls(routine);
+  if (routineEditMode) {
+    renderRoutineEditor(routine);
+    return;
+  }
   routine.steps.forEach((routineStep, index) => {
     const done = isDone(routine.id, index, selectedDateKey || todayKey());
     const displayProduct = productDisplayName(routineStep.product);
@@ -942,13 +1044,128 @@ function renderSteps(routine) {
           <strong>${index + 1}. ${routineStep.action}</strong>
           <span class="badge">${productCategories[routineStep.product] || "Step"}</span>
         </div>
-        <p class="step-text"><strong>${escapeHtml(displayProduct)}</strong>${replacementNote}<br>${routineStep.application}</p>
-        ${routineStep.nuance ? `<p class="step-note">${routineStep.nuance}</p>` : ""}
+        <p class="step-text"><strong>${escapeHtml(displayProduct)}</strong>${replacementNote}<br>${escapeHtml(routineStep.application)}</p>
+        ${routineStep.nuance ? `<p class="step-note">${escapeHtml(routineStep.nuance)}</p>` : ""}
         ${routineStep.timerSeconds ? timerMarkup(routine.id, index, routineStep) : ""}
       </div>
     `;
     els.stepList.append(row);
   });
+}
+
+function renderRoutineEditor(routine) {
+  const help = document.createElement("div");
+  help.className = "edit-banner";
+  help.innerHTML = "<strong>Edit routine</strong><span>Changes save only after tapping Save.</span>";
+  els.stepList.append(help);
+
+  routine.steps.forEach((routineStep, index) => {
+    els.stepList.append(createRoutineEditRow(routineStep, index, routine.steps.length));
+  });
+
+  const actions = document.createElement("div");
+  actions.className = "edit-footer";
+  actions.innerHTML = `
+    <button class="secondary-action" type="button" data-add-edit-step>Add step</button>
+    <button class="secondary-action quiet" type="button" data-cancel-routine-edit>Cancel</button>
+  `;
+  els.stepList.append(actions);
+}
+
+function createRoutineEditRow(routineStep, index, totalSteps) {
+  const row = document.createElement("article");
+  row.className = "routine-edit-step";
+  row.dataset.editIndex = index;
+  row.innerHTML = `
+    <div class="edit-step-head">
+      <strong>Step ${index + 1}</strong>
+      <button class="secondary-action quiet" type="button" data-delete-edit-step="${index}" ${totalSteps <= 1 ? "disabled" : ""}>Delete</button>
+    </div>
+    <label>
+      <span>Action</span>
+      <input type="text" value="${escapeHtml(routineStep.action)}" data-edit-field="action">
+    </label>
+    <label>
+      <span>Product</span>
+      <input type="text" value="${escapeHtml(routineStep.product)}" data-edit-field="product">
+    </label>
+    <label>
+      <span>Application</span>
+      <textarea rows="3" data-edit-field="application">${escapeHtml(routineStep.application)}</textarea>
+    </label>
+    <label>
+      <span>Note</span>
+      <textarea rows="2" placeholder="Optional" data-edit-field="nuance">${escapeHtml(routineStep.nuance || "")}</textarea>
+    </label>
+    <label>
+      <span>Wait timer, minutes</span>
+      <input type="number" min="0" step="1" value="${routineStep.timerSeconds ? Math.round(routineStep.timerSeconds / 60) : 0}" data-edit-field="timerMinutes">
+    </label>
+  `;
+  return row;
+}
+
+function collectRoutineEditorSteps() {
+  return [...els.stepList.querySelectorAll(".routine-edit-step")].map((row) => {
+    const field = (name) => row.querySelector(`[data-edit-field="${name}"]`)?.value || "";
+    return cleanRoutineStep({
+      action: field("action"),
+      product: field("product"),
+      application: field("application"),
+      nuance: field("nuance"),
+      timerSeconds: Number(field("timerMinutes") || 0) * 60
+    });
+  });
+}
+
+function saveRoutineEdits() {
+  if (!selectedRoutine) return;
+  const steps = collectRoutineEditorSteps();
+  setRoutineOverride(selectedRoutine.id, steps);
+  selectedRoutine = routineById(selectedRoutine.id, selectedDateKey || todayKey());
+  routineEditMode = false;
+  renderWarnings(selectedRoutine);
+  renderSteps(selectedRoutine);
+  refresh();
+}
+
+function cancelRoutineEdit() {
+  if (!selectedRoutine) return;
+  selectedRoutine = routineById(selectedRoutine.id, selectedDateKey || todayKey());
+  routineEditMode = false;
+  renderWarnings(selectedRoutine);
+  renderSteps(selectedRoutine);
+}
+
+function rebuildRoutineEditor(nextSteps) {
+  selectedRoutine = {
+    ...selectedRoutine,
+    steps: nextSteps.length ? nextSteps.map(cleanRoutineStep) : [cleanRoutineStep({})]
+  };
+  renderSteps(selectedRoutine);
+}
+
+function addRoutineEditStep() {
+  const nextSteps = collectRoutineEditorSteps();
+  nextSteps.push(cleanRoutineStep({ action: "New step", product: "Custom product", application: "Apply as directed." }));
+  rebuildRoutineEditor(nextSteps);
+}
+
+function deleteRoutineEditStep(index) {
+  const nextSteps = collectRoutineEditorSteps();
+  nextSteps.splice(index, 1);
+  rebuildRoutineEditor(nextSteps);
+}
+
+function resetRoutineEdits() {
+  if (!selectedRoutine) return;
+  const id = selectedRoutine.id;
+  clearRoutineOverride(id);
+  selectedRoutine = routineById(id, selectedDateKey || todayKey());
+  routineEditMode = false;
+  renderWarnings(selectedRoutine);
+  renderSteps(selectedRoutine);
+  refresh();
 }
 
 function timerMarkup(routineId, index, routineStep) {
@@ -1091,8 +1308,14 @@ document.addEventListener("click", (event) => {
   const categoryButton = event.target.closest("[data-category]");
   const saveProductButton = event.target.closest("[data-save-product]");
   const resetProductButton = event.target.closest("[data-reset-product]");
+  const addEditStepButton = event.target.closest("[data-add-edit-step]");
+  const deleteEditStepButton = event.target.closest("[data-delete-edit-step]");
+  const cancelRoutineEditButton = event.target.closest("[data-cancel-routine-edit]");
   const tabButton = event.target.closest("[data-view]");
 
+  if (addEditStepButton) addRoutineEditStep();
+  if (deleteEditStepButton) deleteRoutineEditStep(Number(deleteEditStepButton.dataset.deleteEditStep));
+  if (cancelRoutineEditButton) cancelRoutineEdit();
   if (categoryButton) {
     selectedProductCategory = categoryButton.dataset.category;
     renderProducts();
@@ -1136,6 +1359,15 @@ document.addEventListener("click", (event) => {
   }
 });
 
+els.editRoutine.addEventListener("click", () => {
+  if (!selectedRoutine) return;
+  if (routineEditMode) saveRoutineEdits();
+  else {
+    routineEditMode = true;
+    renderSteps(selectedRoutine);
+  }
+});
+els.resetRoutineEdits.addEventListener("click", resetRoutineEdits);
 els.closeSheet.addEventListener("click", closeRoutine);
 els.routineSheet.addEventListener("click", (event) => {
   if (event.target === els.routineSheet) closeRoutine();

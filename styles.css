@@ -37,7 +37,8 @@ body {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -173,6 +174,11 @@ h3 {
   border: 1px solid rgba(216, 184, 112, 0.22);
   background: #1b1711;
   color: var(--gold-soft);
+}
+
+.secondary-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
 }
 
 .secondary-action.quiet,
@@ -633,6 +639,88 @@ h3 {
   font-weight: 800;
 }
 
+.edit-banner {
+  display: grid;
+  gap: 2px;
+  border: 1px solid rgba(216, 184, 112, 0.24);
+  border-radius: 8px;
+  background: rgba(216, 184, 112, 0.08);
+  padding: 11px 12px;
+}
+
+.edit-banner strong {
+  color: var(--gold-soft);
+  font-size: 0.92rem;
+}
+
+.edit-banner span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.routine-edit-step {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 12px;
+}
+
+.edit-step-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.edit-step-head strong {
+  color: var(--gold-soft);
+  font-size: 0.92rem;
+}
+
+.routine-edit-step label {
+  display: grid;
+  gap: 6px;
+}
+
+.routine-edit-step label span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.routine-edit-step input,
+.routine-edit-step textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgba(216, 184, 112, 0.22);
+  border-radius: 8px;
+  background: #090807;
+  color: var(--ink);
+  padding: 10px 11px;
+  outline: 0;
+}
+
+.routine-edit-step textarea {
+  resize: vertical;
+  line-height: 1.35;
+}
+
+.routine-edit-step input:focus,
+.routine-edit-step textarea:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(216, 184, 112, 0.14);
+}
+
+.edit-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
 .routine-sheet {
   position: fixed;
   inset: 0;
@@ -673,6 +761,18 @@ h3 {
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
+}
+
+.sheet-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.sheet-actions .secondary-action {
+  min-height: 38px;
+  padding: 0 12px;
 }
 
 .warnings {

@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#050505">
     <title>SkinBuddy</title>
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="stylesheet" href="styles.css?v=8">
+    <link rel="stylesheet" href="styles.css?v=9">
   </head>
   <body>
     <div class="app-shell">
@@ -66,6 +66,37 @@
             <strong>Day complete</strong>
             <span>All routines for today are logged.</span>
           </div>
+          <section class="reminder-panel" aria-label="Smart reminders">
+            <div class="reminder-head">
+              <div>
+                <p class="eyebrow">Smart reminders</p>
+                <h3 id="notificationStatus">Notifications off</h3>
+              </div>
+              <button class="secondary-action" id="notificationButton" type="button">Enable</button>
+            </div>
+            <div class="reminder-grid">
+              <label class="reminder-row">
+                <input id="morningReminderToggle" type="checkbox" data-reminder-toggle="morning">
+                <span>Morning</span>
+                <input id="morningReminderTime" type="time" data-reminder-time="morning" value="11:00">
+              </label>
+              <label class="reminder-row">
+                <input id="postGymReminderToggle" type="checkbox" data-reminder-toggle="postGym">
+                <span>Post-work</span>
+                <input id="postGymReminderTime" type="time" data-reminder-time="postGym" value="17:00">
+              </label>
+              <label class="reminder-row">
+                <input id="nightReminderToggle" type="checkbox" data-reminder-toggle="night">
+                <span>Night</span>
+                <input id="nightReminderTime" type="time" data-reminder-time="night" value="02:00">
+              </label>
+              <label class="reminder-row timer-alert-row">
+                <input id="timerAlertToggle" type="checkbox">
+                <span>Timer alerts</span>
+                <strong id="timerAlertState">Off</strong>
+              </label>
+            </div>
+          </section>
           <div id="routineList" class="routine-list"></div>
         </section>
 
@@ -97,6 +128,6 @@
       </div>
     </div>
 
-    <script src="app.js?v=8"></script>
+    <script src="app.js?v=9"></script>
   </body>
 </html>

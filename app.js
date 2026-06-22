@@ -230,10 +230,29 @@ const productCategories = {
   "Skintific Mugwort Clay Mask": "Clay mask"
 };
 
+const reminderDefinitions = {
+  morning: {
+    title: "Morning routine",
+    defaultTime: "11:00",
+    body: "Time to start your morning skincare."
+  },
+  postGym: {
+    title: "Post-work routine",
+    defaultTime: "17:00",
+    body: "Cleanse, treat, and seal before your shift."
+  },
+  night: {
+    title: "Night routine",
+    defaultTime: "02:00",
+    body: "Your 2 AM night routine is ready."
+  }
+};
+
 let selectedRoutine = null;
 let selectedDateKey = null;
 let installPrompt = null;
 let timerInterval = null;
+const reminderTimeouts = new Map();
 
 const els = {
   todayLabel: document.querySelector("#todayLabel"),
@@ -249,6 +268,10 @@ const els = {
   todayGymHint: document.querySelector("#todayGymHint"),
   todayGymToggle: document.querySelector("#todayGymToggle"),
   todayCompleteBanner: document.querySelector("#todayCompleteBanner"),
+  notificationStatus: document.querySelector("#notificationStatus"),
+  notificationButton: document.querySelector("#notificationButton"),
+  timerAlertToggle: document.querySelector("#timerAlertToggle"),
+  timerAlertState: document.querySelector("#timerAlertState"),
   routineList: document.querySelector("#routineList"),
   weekGrid: document.querySelector("#weekGrid"),
   productList: document.querySelector("#productList"),
@@ -403,6 +426,169 @@ function dayProgress(key = todayKey()) {
 function isDayComplete(key = todayKey()) {
   const progress = dayProgress(key);
   return progress.total > 0 && progress.done === progress.total;
+}
+
+function defaultReminderSettings() {
+  return {
+    timers: false,
+    routines: Object.fromEntries(
+      Object.entries(reminderDefinitions).map(([id, definition]) => [
+        id,
+        {
+          enabled: false,
+          time: definition.defaultTime
+        }
+      ])
+    )
+  };
+}
+
+function reminderSettingsKey() {
+  return "skinbuddy:reminders";
+}
+
+function loadReminderSettings() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(reminderSettingsKey()) || "null");
+    const defaults = defaultReminderSettings();
+    return {
+      timers: Boolean(stored?.timers),
+      routines: Object.fromEntries(
+        Object.entries(defaults.routines).map(([id, config]) => [
+          id,
+          {
+            enabled: Boolean(stored?.routines?.[id]?.enabled),
+            time: stored?.routines?.[id]?.time || config.time
+          }
+        ])
+      )
+    };
+  } catch {
+    return defaultReminderSettings();
+  }
+}
+
+function saveReminderSettings(settings) {
+  localStorage.setItem(reminderSettingsKey(), JSON.stringify(settings));
+}
+
+function notificationPermission() {
+  if (!("Notification" in window)) return "unsupported";
+  return Notification.permission;
+}
+
+async function requestNotificationPermission() {
+  if (!("Notification" in window)) return "unsupported";
+  if (Notification.permission === "default") return Notification.requestPermission();
+  return Notification.permission;
+}
+
+async function showSkinBuddyNotification(title, options = {}) {
+  if (notificationPermission() !== "granted") return false;
+  const payload = {
+    badge: "assets/icon.svg",
+    icon: "assets/icon.svg",
+    tag: options.tag || "skinbuddy",
+    renotify: Boolean(options.renotify),
+    data: {
+      url: "./",
+      ...(options.data || {})
+    },
+    body: options.body || ""
+  };
+  if ("serviceWorker" in navigator) {
+    const registration = await navigator.serviceWorker.ready;
+    await registration.showNotification(title, payload);
+    return true;
+  }
+  new Notification(title, payload);
+  return true;
+}
+
+function reminderLastSentKey(id, key = todayKey()) {
+  return `skinbuddy:reminder-sent:${key}:${id}`;
+}
+
+function timerNotifiedKey(routineId, index, key = todayKey()) {
+  return `skinbuddy:timer-notified:${key}:${routineId}:${index}`;
+}
+
+function nextReminderDate(timeValue) {
+  const [hours, minutes] = timeValue.split(":").map(Number);
+  const next = new Date();
+  next.setHours(hours || 0, minutes || 0, 0, 0);
+  if (next <= new Date()) next.setDate(next.getDate() + 1);
+  return next;
+}
+
+function scheduleRoutineReminder(id, config) {
+  clearTimeout(reminderTimeouts.get(id));
+  reminderTimeouts.delete(id);
+  if (!config.enabled || notificationPermission() !== "granted") return;
+  const target = nextReminderDate(config.time);
+  const delay = target.getTime() - Date.now();
+  const timeout = setTimeout(async () => {
+    const key = dateKey(new Date());
+    if (localStorage.getItem(reminderLastSentKey(id, key)) !== "1") {
+      await showSkinBuddyNotification(reminderDefinitions[id].title, {
+        body: reminderDefinitions[id].body,
+        tag: `skinbuddy-reminder-${id}`,
+        renotify: true,
+        data: { reminder: id }
+      });
+      localStorage.setItem(reminderLastSentKey(id, key), "1");
+    }
+    scheduleRoutineReminder(id, loadReminderSettings().routines[id]);
+  }, delay);
+  reminderTimeouts.set(id, timeout);
+}
+
+function scheduleSmartReminders() {
+  const settings = loadReminderSettings();
+  Object.entries(settings.routines).forEach(([id, config]) => scheduleRoutineReminder(id, config));
+}
+
+function renderReminderControls() {
+  const permission = notificationPermission();
+  const settings = loadReminderSettings();
+  const statusMap = {
+    granted: "Notifications on",
+    denied: "Notifications blocked",
+    default: "Notifications off",
+    unsupported: "Notifications unavailable"
+  };
+  els.notificationStatus.textContent = statusMap[permission] || "Notifications off";
+  els.notificationButton.textContent = permission === "granted" ? "Test" : "Enable";
+  els.notificationButton.disabled = permission === "denied" || permission === "unsupported";
+  Object.entries(settings.routines).forEach(([id, config]) => {
+    const toggle = document.querySelector(`[data-reminder-toggle="${id}"]`);
+    const time = document.querySelector(`[data-reminder-time="${id}"]`);
+    if (toggle) toggle.checked = config.enabled;
+    if (time) {
+      time.value = config.time;
+      time.disabled = !config.enabled;
+    }
+  });
+  els.timerAlertToggle.checked = settings.timers;
+  els.timerAlertState.textContent = settings.timers ? "On" : "Off";
+}
+
+function updateReminderSetting(id, patch) {
+  const settings = loadReminderSettings();
+  settings.routines[id] = {
+    ...settings.routines[id],
+    ...patch
+  };
+  saveReminderSettings(settings);
+  renderReminderControls();
+  scheduleSmartReminders();
+}
+
+function updateTimerAlertSetting(enabled) {
+  const settings = loadReminderSettings();
+  settings.timers = enabled;
+  saveReminderSettings(settings);
+  renderReminderControls();
 }
 
 function updateStats() {
@@ -710,6 +896,7 @@ function getTimerState(routineId, index, key, defaultSeconds) {
 function startTimer(routine, index, seconds, key = todayKey()) {
   const deadline = Date.now() + seconds * 1000;
   localStorage.setItem(timerStorageKey(routine.id, index, key), String(deadline));
+  localStorage.removeItem(timerNotifiedKey(routine.id, index, key));
   renderSteps(routine);
   updateVisibleTimers();
   ensureTimerInterval();
@@ -717,6 +904,7 @@ function startTimer(routine, index, seconds, key = todayKey()) {
 
 function clearTimer(routine, index, key = todayKey()) {
   localStorage.removeItem(timerStorageKey(routine.id, index, key));
+  localStorage.removeItem(timerNotifiedKey(routine.id, index, key));
   renderSteps(routine);
   updateVisibleTimers();
 }
@@ -733,6 +921,20 @@ function updateVisibleTimers() {
     readout.classList.toggle("is-complete", timer.complete);
     const button = readout.parentElement?.querySelector("[data-timer]");
     if (button) button.textContent = timer.deadline ? "Restart timer" : `Start ${readout.dataset.label || formatTimerLabel(defaultSeconds)}`;
+    maybeNotifyTimerComplete(routineId, index, key, timer);
+  });
+}
+
+async function maybeNotifyTimerComplete(routineId, index, key, timer) {
+  const settings = loadReminderSettings();
+  const notifiedKey = timerNotifiedKey(routineId, index, key);
+  if (!settings.timers || !timer.complete || localStorage.getItem(notifiedKey) === "1") return;
+  localStorage.setItem(notifiedKey, "1");
+  await showSkinBuddyNotification("Timer ready", {
+    body: "Your wait step is finished.",
+    tag: `skinbuddy-timer-${key}-${routineId}-${index}`,
+    renotify: true,
+    data: { routineId, index, key }
   });
 }
 
@@ -758,6 +960,7 @@ function refresh() {
   renderToday();
   renderSchedule();
   renderProducts();
+  renderReminderControls();
   updateStats();
 }
 
@@ -809,10 +1012,38 @@ els.todayGymToggle.addEventListener("change", () => {
   if (isWeekend(dayKey)) setGymDay(dayKey, els.todayGymToggle.checked);
   refresh();
 });
+els.notificationButton.addEventListener("click", async () => {
+  const permission = await requestNotificationPermission();
+  renderReminderControls();
+  scheduleSmartReminders();
+  if (permission === "granted") {
+    await showSkinBuddyNotification("SkinBuddy reminders enabled", {
+      body: "Your skincare reminders are ready.",
+      tag: "skinbuddy-test",
+      renotify: true
+    });
+  }
+});
+document.querySelectorAll("[data-reminder-toggle]").forEach((toggle) => {
+  toggle.addEventListener("change", () => {
+    updateReminderSetting(toggle.dataset.reminderToggle, { enabled: toggle.checked });
+  });
+});
+document.querySelectorAll("[data-reminder-time]").forEach((time) => {
+  time.addEventListener("change", () => {
+    updateReminderSetting(time.dataset.reminderTime, { time: time.value });
+  });
+});
+els.timerAlertToggle.addEventListener("change", () => {
+  updateTimerAlertSetting(els.timerAlertToggle.checked);
+});
 
 window.addEventListener("focus", updateVisibleTimers);
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) updateVisibleTimers();
+  if (!document.hidden) {
+    updateVisibleTimers();
+    scheduleSmartReminders();
+  }
 });
 
 window.addEventListener("beforeinstallprompt", (event) => {
@@ -837,3 +1068,4 @@ if ("serviceWorker" in navigator) {
 
 refresh();
 ensureTimerInterval();
+scheduleSmartReminders();

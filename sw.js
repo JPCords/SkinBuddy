@@ -1,9 +1,9 @@
-const CACHE_NAME = "skinbuddy-v8";
+const CACHE_NAME = "skinbuddy-v9";
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=8",
-  "./app.js?v=8",
+  "./styles.css?v=9",
+  "./app.js?v=9",
   "./manifest.webmanifest",
   "./assets/icon.svg",
   "./assets/skincare-banner.png"
@@ -33,5 +33,17 @@ self.addEventListener("fetch", (event) => {
         return response;
       })
     )
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = new URL(event.notification.data?.url || "./", self.location.origin).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      const existingClient = clientList.find((client) => client.url.startsWith(self.location.origin));
+      if (existingClient) return existingClient.focus();
+      return self.clients.openWindow(targetUrl);
+    })
   );
 });

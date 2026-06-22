@@ -349,6 +349,80 @@ h3 {
   transform: translateX(20px);
 }
 
+.reminder-panel {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 244, 214, 0.05), rgba(255, 244, 214, 0)),
+    var(--surface);
+  margin-bottom: 12px;
+  padding: 14px;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.3);
+}
+
+.reminder-head,
+.reminder-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.reminder-head .secondary-action {
+  flex: 0 0 auto;
+}
+
+.reminder-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.reminder-row {
+  min-height: 46px;
+  border: 1px solid rgba(255, 244, 214, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 244, 214, 0.035);
+  padding: 8px 10px;
+}
+
+.reminder-row > span {
+  flex: 1;
+  min-width: 0;
+  color: var(--ink);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.reminder-row > strong {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.reminder-row input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--gold);
+}
+
+.reminder-row input[type="time"] {
+  width: 96px;
+  min-height: 34px;
+  border: 1px solid rgba(216, 184, 112, 0.22);
+  border-radius: 8px;
+  background: #090807;
+  color: var(--gold-soft);
+  padding: 0 8px;
+  outline: 0;
+}
+
+.reminder-row input[type="time"]:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(216, 184, 112, 0.14);
+}
+
 .routine-list,
 .week-grid,
 .product-list {

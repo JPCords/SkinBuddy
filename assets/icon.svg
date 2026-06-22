@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="SkinBuddy icon">
+  <rect width="512" height="512" rx="96" fill="#050505"/>
+  <circle cx="160" cy="162" r="70" fill="#1a1712"/>
+  <circle cx="348" cy="156" r="56" fill="#d8b870"/>
+  <path d="M116 346c45-88 112-132 199-132 51 0 88 17 112 50-26 91-91 137-196 137-53 0-91-18-115-55z" fill="#77b889"/>
+  <path d="M184 324c46 9 91-6 135-45 19-17 39-25 61-26-24 64-74 96-149 96-20 0-36-8-47-25z" fill="#d8b870"/>
+  <path d="M152 349c45 39 110 46 195 22" fill="none" stroke="#fff4d6" stroke-width="18" stroke-linecap="round"/>
+</svg>

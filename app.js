@@ -234,7 +234,6 @@ let selectedRoutine = null;
 let selectedDateKey = null;
 let installPrompt = null;
 let timerInterval = null;
-const timerState = new Map();
 
 const els = {
   todayLabel: document.querySelector("#todayLabel"),
@@ -649,39 +648,102 @@ function renderSteps(routine) {
 }
 
 function timerMarkup(routineId, index, routineStep) {
-  const key = `${routineId}:${index}`;
-  const remaining = timerState.get(key) || routineStep.timerSeconds;
+  const key = selectedDateKey || todayKey();
+  const timer = getTimerState(routineId, index, key, routineStep.timerSeconds);
+  const buttonText = timer.deadline ? "Restart timer" : `Start ${routineStep.timerLabel}`;
   return `
     <div class="step-tools">
-      <button class="timer-button" type="button" data-timer="${index}" data-seconds="${routineStep.timerSeconds}">Start ${routineStep.timerLabel}</button>
-      <span class="timer-readout" data-readout="${index}">${formatTime(remaining)}</span>
+      <button class="timer-button" type="button" data-timer="${index}" data-seconds="${routineStep.timerSeconds}" data-date="${key}">${buttonText}</button>
+      ${timer.deadline ? `<button class="timer-button quiet" type="button" data-clear-timer="${index}" data-date="${key}">Clear timer</button>` : ""}
+      <span class="timer-readout ${timer.complete ? "is-complete" : timer.active ? "is-active" : ""}" data-readout="${index}" data-routine="${routineId}" data-date="${key}" data-default="${routineStep.timerSeconds}" data-label="${routineStep.timerLabel}">${timer.label}</span>
+      <span class="timer-note">${timer.deadline ? "Saved even if you leave the app" : "Timer persists after closing the app"}</span>
     </div>
   `;
 }
 
 function formatTime(totalSeconds) {
-  const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
-  const seconds = String(totalSeconds % 60).padStart(2, "0");
+  const safeSeconds = Math.max(0, totalSeconds);
+  const minutes = String(Math.floor(safeSeconds / 60)).padStart(2, "0");
+  const seconds = String(safeSeconds % 60).padStart(2, "0");
   return `${minutes}:${seconds}`;
 }
 
-function startTimer(routine, index, seconds) {
-  const key = `${routine.id}:${index}`;
-  timerState.set(key, seconds);
-  if (timerInterval) clearInterval(timerInterval);
-  timerInterval = setInterval(() => {
-    const current = timerState.get(key) || 0;
-    if (current <= 1) {
-      timerState.delete(key);
-      clearInterval(timerInterval);
-      timerInterval = null;
-      renderSteps(routine);
-      return;
-    }
-    timerState.set(key, current - 1);
-    const readout = document.querySelector(`[data-readout="${index}"]`);
-    if (readout) readout.textContent = formatTime(current - 1);
-  }, 1000);
+function timerStorageKey(routineId, index, key = todayKey()) {
+  return `skinbuddy:timer:${key}:${routineId}:${index}`;
+}
+
+function getTimerDeadline(routineId, index, key = todayKey()) {
+  const value = Number(localStorage.getItem(timerStorageKey(routineId, index, key)));
+  return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
+function getTimerState(routineId, index, key, defaultSeconds) {
+  const deadline = getTimerDeadline(routineId, index, key);
+  if (!deadline) {
+    return {
+      active: false,
+      complete: false,
+      deadline: 0,
+      remaining: defaultSeconds,
+      label: formatTime(defaultSeconds)
+    };
+  }
+  const remaining = Math.ceil((deadline - Date.now()) / 1000);
+  if (remaining <= 0) {
+    return {
+      active: false,
+      complete: true,
+      deadline,
+      remaining: 0,
+      label: "Ready"
+    };
+  }
+  return {
+    active: true,
+    complete: false,
+    deadline,
+    remaining,
+    label: formatTime(remaining)
+  };
+}
+
+function startTimer(routine, index, seconds, key = todayKey()) {
+  const deadline = Date.now() + seconds * 1000;
+  localStorage.setItem(timerStorageKey(routine.id, index, key), String(deadline));
+  renderSteps(routine);
+  updateVisibleTimers();
+  ensureTimerInterval();
+}
+
+function clearTimer(routine, index, key = todayKey()) {
+  localStorage.removeItem(timerStorageKey(routine.id, index, key));
+  renderSteps(routine);
+  updateVisibleTimers();
+}
+
+function updateVisibleTimers() {
+  document.querySelectorAll(".timer-readout").forEach((readout) => {
+    const routineId = readout.dataset.routine;
+    const index = Number(readout.dataset.readout);
+    const key = readout.dataset.date || todayKey();
+    const defaultSeconds = Number(readout.dataset.default || 0);
+    const timer = getTimerState(routineId, index, key, defaultSeconds);
+    readout.textContent = timer.label;
+    readout.classList.toggle("is-active", timer.active);
+    readout.classList.toggle("is-complete", timer.complete);
+    const button = readout.parentElement?.querySelector("[data-timer]");
+    if (button) button.textContent = timer.deadline ? "Restart timer" : `Start ${readout.dataset.label || formatTimerLabel(defaultSeconds)}`;
+  });
+}
+
+function formatTimerLabel(totalSeconds) {
+  if (totalSeconds >= 60 && totalSeconds % 60 === 0) return `${totalSeconds / 60} min`;
+  return `${totalSeconds} sec`;
+}
+
+function ensureTimerInterval() {
+  if (timerInterval) return;
+  timerInterval = setInterval(updateVisibleTimers, 1000);
 }
 
 function resetRoutine(id, key = todayKey()) {
@@ -704,6 +766,7 @@ document.addEventListener("click", (event) => {
   const resetButton = event.target.closest("[data-reset]");
   const stepButton = event.target.closest("[data-step]");
   const timerButton = event.target.closest("[data-timer]");
+  const clearTimerButton = event.target.closest("[data-clear-timer]");
   const tabButton = event.target.closest("[data-view]");
 
   if (openButton) openRoutine(openButton.dataset.open, openButton.dataset.date || todayKey());
@@ -716,7 +779,19 @@ document.addEventListener("click", (event) => {
     refresh();
   }
   if (timerButton && selectedRoutine) {
-    startTimer(selectedRoutine, Number(timerButton.dataset.timer), Number(timerButton.dataset.seconds));
+    startTimer(
+      selectedRoutine,
+      Number(timerButton.dataset.timer),
+      Number(timerButton.dataset.seconds),
+      timerButton.dataset.date || selectedDateKey || todayKey()
+    );
+  }
+  if (clearTimerButton && selectedRoutine) {
+    clearTimer(
+      selectedRoutine,
+      Number(clearTimerButton.dataset.clearTimer),
+      clearTimerButton.dataset.date || selectedDateKey || todayKey()
+    );
   }
   if (tabButton) {
     document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("is-active", tab === tabButton));
@@ -733,6 +808,11 @@ els.todayGymToggle.addEventListener("change", () => {
   const dayKey = getDayKey();
   if (isWeekend(dayKey)) setGymDay(dayKey, els.todayGymToggle.checked);
   refresh();
+});
+
+window.addEventListener("focus", updateVisibleTimers);
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) updateVisibleTimers();
 });
 
 window.addEventListener("beforeinstallprompt", (event) => {
@@ -756,3 +836,4 @@ if ("serviceWorker" in navigator) {
 }
 
 refresh();
+ensureTimerInterval();

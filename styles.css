@@ -175,6 +175,11 @@ h3 {
   color: var(--gold-soft);
 }
 
+.timer-button.quiet {
+  border-color: rgba(255, 244, 214, 0.12);
+  color: var(--muted);
+}
+
 .status-strip {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -630,6 +635,24 @@ h3 {
   padding: 0 12px;
   color: var(--muted);
   font-weight: 800;
+}
+
+.timer-readout.is-active {
+  border: 1px solid rgba(216, 184, 112, 0.38);
+  color: var(--gold-soft);
+}
+
+.timer-readout.is-complete {
+  border: 1px solid rgba(119, 184, 137, 0.45);
+  background: rgba(119, 184, 137, 0.14);
+  color: #d8f4df;
+}
+
+.timer-note {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.35;
 }
 
 @media (min-width: 760px) {

@@ -250,6 +250,7 @@ const reminderDefinitions = {
 
 let selectedRoutine = null;
 let selectedDateKey = null;
+let selectedProductCategory = "All";
 let installPrompt = null;
 let timerInterval = null;
 const reminderTimeouts = new Map();
@@ -274,6 +275,7 @@ const els = {
   timerAlertState: document.querySelector("#timerAlertState"),
   routineList: document.querySelector("#routineList"),
   weekGrid: document.querySelector("#weekGrid"),
+  categoryFilters: document.querySelector("#categoryFilters"),
   productList: document.querySelector("#productList"),
   productSearch: document.querySelector("#productSearch"),
   routineSheet: document.querySelector("#routineSheet"),
@@ -293,6 +295,19 @@ function step(action, product, application, nuance = "", timerSeconds = 0) {
     result.timerLabel = timerSeconds >= 600 ? `${Math.round(timerSeconds / 60)} min` : `${timerSeconds} sec`;
   }
   return result;
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (character) => {
+    const entities = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    };
+    return entities[character];
+  });
 }
 
 function dateKey(date) {
@@ -747,16 +762,69 @@ function productLibrary() {
   Object.values(nightSchedule).forEach((item) => collect({ title: item.day, steps: item.steps }));
   return [...notes.entries()].map(([name, appearances]) => ({
     name,
+    displayName: productDisplayName(name),
     category: productCategories[name] || "Routine product",
-    appearances: [...appearances]
+    appearances: [...appearances],
+    replacement: productReplacement(name)
   }));
+}
+
+function productOverridesKey() {
+  return "skinbuddy:product-overrides";
+}
+
+function loadProductOverrides() {
+  try {
+    const overrides = JSON.parse(localStorage.getItem(productOverridesKey()) || "{}");
+    return overrides && typeof overrides === "object" ? overrides : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveProductOverrides(overrides) {
+  localStorage.setItem(productOverridesKey(), JSON.stringify(overrides));
+}
+
+function productReplacement(name) {
+  return loadProductOverrides()[name] || "";
+}
+
+function productDisplayName(name) {
+  return productReplacement(name) || name;
+}
+
+function setProductReplacement(name, replacement) {
+  const overrides = loadProductOverrides();
+  const clean = replacement.trim();
+  if (clean) overrides[name] = clean;
+  else delete overrides[name];
+  saveProductOverrides(overrides);
+}
+
+function productCategoriesList() {
+  return ["All", ...new Set(productLibrary().map((item) => item.category).sort((a, b) => a.localeCompare(b)))];
+}
+
+function renderCategoryFilters() {
+  els.categoryFilters.innerHTML = "";
+  productCategoriesList().forEach((category) => {
+    const button = document.createElement("button");
+    button.className = `category-chip${category === selectedProductCategory ? " is-active" : ""}`;
+    button.type = "button";
+    button.dataset.category = category;
+    button.textContent = category;
+    els.categoryFilters.append(button);
+  });
 }
 
 function renderProducts() {
   const query = els.productSearch.value.trim().toLowerCase();
+  renderCategoryFilters();
   els.productList.innerHTML = "";
   productLibrary()
-    .filter((item) => `${item.name} ${item.category}`.toLowerCase().includes(query))
+    .filter((item) => selectedProductCategory === "All" || item.category === selectedProductCategory)
+    .filter((item) => `${item.name} ${item.displayName} ${item.category}`.toLowerCase().includes(query))
     .sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name))
     .forEach((item) => {
       const card = document.createElement("article");
@@ -764,10 +832,15 @@ function renderProducts() {
       card.innerHTML = `
         <div class="product-top">
           <div>
-            <p class="eyebrow">${item.category}</p>
-            <h3>${item.name}</h3>
-            <p class="product-meta">${item.appearances.join(", ")}</p>
+            <p class="eyebrow">${escapeHtml(item.category)}</p>
+            <h3>${escapeHtml(item.displayName)}</h3>
+            <p class="product-meta">${item.replacement ? `Original: ${escapeHtml(item.name)} - ` : ""}${escapeHtml(item.appearances.join(", "))}</p>
           </div>
+        </div>
+        <div class="swap-row">
+          <input type="text" value="${escapeHtml(item.replacement)}" placeholder="Swap product" aria-label="Swap ${escapeHtml(item.name)}" data-product-input>
+          <button class="secondary-action" type="button" data-save-product="${escapeHtml(item.name)}">Save</button>
+          <button class="secondary-action quiet" type="button" data-reset-product="${escapeHtml(item.name)}">Reset</button>
         </div>
       `;
       els.productList.append(card);
@@ -858,6 +931,8 @@ function renderSteps(routine) {
   els.stepList.innerHTML = "";
   routine.steps.forEach((routineStep, index) => {
     const done = isDone(routine.id, index, selectedDateKey || todayKey());
+    const displayProduct = productDisplayName(routineStep.product);
+    const replacementNote = displayProduct !== routineStep.product ? `<span class="product-swap-note">Swapped from ${escapeHtml(routineStep.product)}</span>` : "";
     const row = document.createElement("article");
     row.className = `step-row${done ? " is-done" : ""}`;
     row.innerHTML = `
@@ -867,7 +942,7 @@ function renderSteps(routine) {
           <strong>${index + 1}. ${routineStep.action}</strong>
           <span class="badge">${productCategories[routineStep.product] || "Step"}</span>
         </div>
-        <p class="step-text"><strong>${routineStep.product}</strong><br>${routineStep.application}</p>
+        <p class="step-text"><strong>${escapeHtml(displayProduct)}</strong>${replacementNote}<br>${routineStep.application}</p>
         ${routineStep.nuance ? `<p class="step-note">${routineStep.nuance}</p>` : ""}
         ${routineStep.timerSeconds ? timerMarkup(routine.id, index, routineStep) : ""}
       </div>
@@ -1013,8 +1088,24 @@ document.addEventListener("click", (event) => {
   const stepButton = event.target.closest("[data-step]");
   const timerButton = event.target.closest("[data-timer]");
   const clearTimerButton = event.target.closest("[data-clear-timer]");
+  const categoryButton = event.target.closest("[data-category]");
+  const saveProductButton = event.target.closest("[data-save-product]");
+  const resetProductButton = event.target.closest("[data-reset-product]");
   const tabButton = event.target.closest("[data-view]");
 
+  if (categoryButton) {
+    selectedProductCategory = categoryButton.dataset.category;
+    renderProducts();
+  }
+  if (saveProductButton) {
+    const input = saveProductButton.closest(".product-card")?.querySelector("[data-product-input]");
+    setProductReplacement(saveProductButton.dataset.saveProduct, input?.value || "");
+    refresh();
+  }
+  if (resetProductButton) {
+    setProductReplacement(resetProductButton.dataset.resetProduct, "");
+    refresh();
+  }
   if (openButton) openRoutine(openButton.dataset.open, openButton.dataset.date || todayKey());
   if (resetButton) resetRoutine(resetButton.dataset.reset, resetButton.dataset.date || todayKey());
   if (stepButton && selectedRoutine) {

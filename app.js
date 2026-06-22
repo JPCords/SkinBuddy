@@ -303,6 +303,37 @@ function todayKey() {
   return dateKey(new Date());
 }
 
+function addDays(date, amount) {
+  const next = new Date(date);
+  next.setDate(date.getDate() + amount);
+  return next;
+}
+
+function firstActiveKey() {
+  const key = "skinbuddy:first-active-key";
+  const stored = localStorage.getItem(key);
+  if (stored) return stored;
+  const loggedKeys = Object.keys(localStorage)
+    .map((item) => item.match(/^skinbuddy:(\d{4}-\d{2}-\d{2}):/)?.[1])
+    .filter(Boolean)
+    .sort();
+  const current = loggedKeys[0] || todayKey();
+  localStorage.setItem(key, current);
+  return current;
+}
+
+function activeSkincareDayKey() {
+  const current = todayKey();
+  const first = firstActiveKey();
+  const previous = dateKey(addDays(dateFromKey(current), -1));
+  if (previous >= first && !isDayComplete(previous)) return previous;
+  return current;
+}
+
+function activeSkincareDate() {
+  return dateFromKey(activeSkincareDayKey());
+}
+
 function getDayKey(date = new Date()) {
   return date.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
 }
@@ -370,9 +401,11 @@ function weekendMorningRoutine(dayKey) {
 }
 
 function getNightRoutine(date = new Date()) {
+  const item = nightSchedule[getDayKey(date)];
   return {
     id: `night-${getDayKey(date)}`,
-    ...nightSchedule[getDayKey(date)]
+    summary: `${item.title} closes this skincare day at 2:00 AM.`,
+    ...item
   };
 }
 
@@ -383,12 +416,16 @@ function getDayRoutines(date = new Date()) {
 }
 
 function getTodayRoutines() {
-  return getDayRoutines(new Date());
+  return getDayRoutines(activeSkincareDate());
 }
 
 function getNextRoutine() {
-  const hour = new Date().getHours();
+  const activeKey = activeSkincareDayKey();
   const list = getTodayRoutines();
+  if (activeKey !== todayKey()) {
+    return list.find((routine) => routineProgress(routine, activeKey).done < routine.steps.length) || list[list.length - 1];
+  }
+  const hour = new Date().getHours();
   return list.find((routine) => hour < (routine.startsAt ?? 26)) || list[0];
 }
 
@@ -592,10 +629,11 @@ function updateTimerAlertSetting(enabled) {
 }
 
 function updateStats() {
+  const key = activeSkincareDayKey();
   const routinesToday = getTodayRoutines();
-  const completed = routinesToday.reduce((sum, routine) => sum + routineProgress(routine).done, 0);
+  const completed = routinesToday.reduce((sum, routine) => sum + routineProgress(routine, key).done, 0);
   els.completedCount.textContent = completed;
-  els.activeDayName.textContent = nightSchedule[getDayKey()].day.slice(0, 3);
+  els.activeDayName.textContent = nightSchedule[getDayKey(activeSkincareDate())].day.slice(0, 3);
   els.streakCount.textContent = calculateStreak();
 }
 
@@ -613,33 +651,38 @@ function calculateStreak() {
 }
 
 function renderHero() {
+  const key = activeSkincareDayKey();
+  const activeDate = dateFromKey(key);
   const next = getNextRoutine();
-  const progress = routineProgress(next, todayKey());
-  els.todayLabel.textContent = new Date().toLocaleDateString("en-US", {
+  const progress = routineProgress(next, key);
+  const activeLabel = activeDate.toLocaleDateString("en-US", {
     weekday: "long",
     month: "short",
     day: "numeric"
   });
+  els.todayLabel.textContent = key === todayKey() ? activeLabel : `${activeLabel} skincare day`;
   els.nextRoutineLabel.textContent = next.time;
   els.heroTitle.textContent = next.title;
   els.heroMeta.textContent = `${progress.done}/${progress.total} complete - ${next.summary}`;
-  els.startNextRoutine.onclick = () => openRoutine(next.id, todayKey());
+  els.startNextRoutine.onclick = () => openRoutine(next.id, key);
 }
 
 function renderToday() {
-  const dayKey = getDayKey();
+  const key = activeSkincareDayKey();
+  const activeDate = dateFromKey(key);
+  const dayKey = getDayKey(activeDate);
   const weekendToday = isWeekend(dayKey);
   els.todayGymControls.hidden = !weekendToday;
   if (weekendToday) {
-    const enabled = isGymDay(new Date());
+    const enabled = isGymDay(activeDate);
     els.todayGymToggle.checked = enabled;
     els.todayGymTitle.textContent = `${nightSchedule[dayKey].day} gym day`;
-    els.todayGymHint.textContent = enabled ? "Today shows all 3 routines" : "Today skips the separate pre-gym routine";
+    els.todayGymHint.textContent = enabled ? "This skincare day shows all 3 routines" : "This skincare day skips the separate pre-gym routine";
   }
-  els.todayCompleteBanner.hidden = !isDayComplete(todayKey());
+  els.todayCompleteBanner.hidden = !isDayComplete(key);
   els.routineList.innerHTML = "";
   getTodayRoutines().forEach((routine) => {
-    const progress = routineProgress(routine, todayKey());
+    const progress = routineProgress(routine, key);
     const card = document.createElement("article");
     card.className = "routine-card";
     card.innerHTML = `
@@ -653,8 +696,8 @@ function renderToday() {
       </div>
       <div class="routine-progress" aria-label="${progress.percent}% complete"><span style="width: ${progress.percent}%"></span></div>
       <div class="routine-actions">
-        <button class="primary-action" type="button" data-open="${routine.id}" data-date="${todayKey()}">Open</button>
-        <button class="secondary-action" type="button" data-reset="${routine.id}" data-date="${todayKey()}">Reset</button>
+        <button class="primary-action" type="button" data-open="${routine.id}" data-date="${key}">Open</button>
+        <button class="secondary-action" type="button" data-reset="${routine.id}" data-date="${key}">Reset</button>
       </div>
     `;
     els.routineList.append(card);
@@ -663,7 +706,7 @@ function renderToday() {
 
 function renderSchedule() {
   els.weekGrid.innerHTML = "";
-  const currentDate = todayKey();
+  const currentDate = activeSkincareDayKey();
   getCurrentWeekDates().forEach((date) => {
     const key = getDayKey(date);
     const item = nightSchedule[key];
@@ -1008,7 +1051,7 @@ els.routineSheet.addEventListener("click", (event) => {
 });
 els.productSearch.addEventListener("input", renderProducts);
 els.todayGymToggle.addEventListener("change", () => {
-  const dayKey = getDayKey();
+  const dayKey = getDayKey(activeSkincareDate());
   if (isWeekend(dayKey)) setGymDay(dayKey, els.todayGymToggle.checked);
   refresh();
 });

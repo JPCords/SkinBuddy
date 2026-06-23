@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#050505">
     <title>SkinBuddy</title>
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="stylesheet" href="styles.css?v=22">
+    <link rel="stylesheet" href="styles.css?v=23">
   </head>
   <body>
     <div class="app-shell">
@@ -50,7 +50,6 @@
           <button class="tab is-active" type="button" data-view="today">Today</button>
           <button class="tab" type="button" data-view="schedule">Schedule</button>
           <button class="tab" type="button" data-view="history">History</button>
-          <button class="tab" type="button" data-view="journal">Journal</button>
           <button class="tab" type="button" data-view="products">Products</button>
           <button class="tab" type="button" data-view="settings">Settings</button>
         </nav>
@@ -100,60 +99,6 @@
               <span>Sun</span>
             </div>
             <div class="calendar-grid" id="historyGrid"></div>
-          </section>
-        </section>
-
-        <section class="view" id="journalView" aria-label="Skin journal and progress photos">
-          <section class="journal-panel">
-            <div class="journal-head">
-              <div>
-                <p class="eyebrow">Skin journal</p>
-                <h3 id="journalDateLabel">Today</h3>
-              </div>
-              <div class="journal-actions">
-                <button class="secondary-action quiet" id="journalPrev" type="button">Prev</button>
-                <button class="secondary-action quiet" id="journalToday" type="button">Today</button>
-                <button class="secondary-action quiet" id="journalNext" type="button">Next</button>
-              </div>
-            </div>
-
-            <div class="journal-score-grid" aria-label="Daily skin ratings">
-              <label class="score-control">
-                <span>Hydration</span>
-                <strong id="hydrationValue">3</strong>
-                <input id="hydrationScore" type="range" min="0" max="5" step="1">
-              </label>
-              <label class="score-control">
-                <span>Oiliness</span>
-                <strong id="oilValue">3</strong>
-                <input id="oilScore" type="range" min="0" max="5" step="1">
-              </label>
-              <label class="score-control">
-                <span>Irritation</span>
-                <strong id="irritationValue">0</strong>
-                <input id="irritationScore" type="range" min="0" max="5" step="1">
-              </label>
-            </div>
-
-            <div>
-              <p class="field-label">Skin notes</p>
-              <textarea id="journalNotes" rows="4" placeholder="Breakouts, texture, redness, glow, sleep, stress, or anything you noticed."></textarea>
-            </div>
-
-            <div>
-              <p class="field-label">Today feels like</p>
-              <div class="concern-grid" id="concernGrid" aria-label="Skin concern tags"></div>
-            </div>
-          </section>
-
-          <section class="photo-panel">
-            <div class="journal-head">
-              <div>
-                <p class="eyebrow">Progress photos</p>
-                <h3>Daily check-in</h3>
-              </div>
-            </div>
-            <div class="photo-grid" id="photoGrid"></div>
           </section>
         </section>
 
@@ -231,6 +176,6 @@
       </div>
     </div>
 
-    <script src="app.js?v=22"></script>
+    <script src="app.js?v=23"></script>
   </body>
 </html>

@@ -248,11 +248,19 @@ const reminderDefinitions = {
   }
 };
 
+const journalTags = ["Clear", "Dry", "Oily", "Redness", "Breakout", "Texture", "Glow", "Sensitive"];
+const photoSlots = [
+  { id: "front", label: "Front" },
+  { id: "left", label: "Left" },
+  { id: "right", label: "Right" }
+];
+
 let selectedRoutine = null;
 let selectedDateKey = null;
 let selectedProductCategory = "All";
 let routineEditMode = false;
 let historyCursor = new Date();
+let journalCursor = new Date();
 let installPrompt = null;
 let timerInterval = null;
 const reminderTimeouts = new Map();
@@ -283,6 +291,19 @@ const els = {
   historyPrev: document.querySelector("#historyPrev"),
   historyToday: document.querySelector("#historyToday"),
   historyNext: document.querySelector("#historyNext"),
+  journalDateLabel: document.querySelector("#journalDateLabel"),
+  journalPrev: document.querySelector("#journalPrev"),
+  journalToday: document.querySelector("#journalToday"),
+  journalNext: document.querySelector("#journalNext"),
+  hydrationScore: document.querySelector("#hydrationScore"),
+  hydrationValue: document.querySelector("#hydrationValue"),
+  oilScore: document.querySelector("#oilScore"),
+  oilValue: document.querySelector("#oilValue"),
+  irritationScore: document.querySelector("#irritationScore"),
+  irritationValue: document.querySelector("#irritationValue"),
+  journalNotes: document.querySelector("#journalNotes"),
+  concernGrid: document.querySelector("#concernGrid"),
+  photoGrid: document.querySelector("#photoGrid"),
   categoryFilters: document.querySelector("#categoryFilters"),
   productList: document.querySelector("#productList"),
   productSearch: document.querySelector("#productSearch"),
@@ -449,6 +470,97 @@ function getDayKey(date = new Date()) {
 function dateFromKey(key) {
   const [year, month, day] = key.split("-").map(Number);
   return new Date(year, month - 1, day);
+}
+
+function journalKey(key) {
+  return `skinbuddy:journal:${key}`;
+}
+
+function defaultJournalEntry() {
+  return {
+    hydration: 3,
+    oil: 3,
+    irritation: 0,
+    notes: "",
+    tags: [],
+    photos: {}
+  };
+}
+
+function loadJournalEntry(key) {
+  try {
+    const stored = JSON.parse(localStorage.getItem(journalKey(key)) || "null");
+    if (!stored || typeof stored !== "object") return defaultJournalEntry();
+    return {
+      ...defaultJournalEntry(),
+      ...stored,
+      tags: Array.isArray(stored.tags) ? stored.tags : [],
+      photos: stored.photos && typeof stored.photos === "object" ? stored.photos : {}
+    };
+  } catch {
+    return defaultJournalEntry();
+  }
+}
+
+function journalHasContent(entry) {
+  return Boolean(
+    String(entry.notes || "").trim() ||
+      entry.tags.length ||
+      Object.values(entry.photos || {}).some(Boolean) ||
+      entry.hydration !== 3 ||
+      entry.oil !== 3 ||
+      entry.irritation !== 0
+  );
+}
+
+function saveJournalEntry(key, entry) {
+  if (!journalHasContent(entry)) {
+    localStorage.removeItem(journalKey(key));
+    return;
+  }
+  localStorage.setItem(journalKey(key), JSON.stringify(entry));
+}
+
+function updateJournalEntry(patch) {
+  const key = dateKey(journalCursor);
+  const entry = {
+    ...loadJournalEntry(key),
+    ...patch
+  };
+  saveJournalEntry(key, entry);
+  renderJournal();
+  renderHistory();
+}
+
+function hasJournalEntry(key) {
+  return journalHasContent(loadJournalEntry(key));
+}
+
+function hasJournalPhotos(key) {
+  return Object.values(loadJournalEntry(key).photos || {}).some(Boolean);
+}
+
+function resizePhoto(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Unable to read photo."));
+    reader.onload = () => {
+      const image = new Image();
+      image.onerror = () => reject(new Error("Unable to load photo."));
+      image.onload = () => {
+        const maxSide = 900;
+        const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        const context = canvas.getContext("2d");
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      };
+      image.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 function getCurrentWeekDates() {
@@ -900,16 +1012,19 @@ function renderHistory() {
     const progress = dayProgress(key);
     const status = historyStatus(key, progress);
     const inMonth = date.getMonth() === currentMonth;
+    const hasEntry = hasJournalEntry(key);
+    const hasPhotos = hasJournalPhotos(key);
     if (inMonth && stats[status] !== undefined) stats[status] += 1;
 
     const button = document.createElement("button");
-    button.className = `calendar-day ${status}${inMonth ? "" : " is-outside"}${key === activeSkincareDayKey() ? " is-active-day" : ""}`;
+    button.className = `calendar-day ${status}${inMonth ? "" : " is-outside"}${key === activeSkincareDayKey() ? " is-active-day" : ""}${hasEntry ? " has-journal" : ""}${hasPhotos ? " has-photos" : ""}`;
     button.type = "button";
     button.dataset.historyDate = key;
     button.innerHTML = `
       <strong>${date.getDate()}</strong>
       <span>${progress.done}/${progress.total}</span>
       <small>${historyStatusLabel(status)}</small>
+      ${hasEntry ? `<em>${hasPhotos ? "Photo" : "Note"}</em>` : ""}
     `;
     els.historyGrid.append(button);
   });
@@ -919,6 +1034,93 @@ function renderHistory() {
     <span><strong>${stats.partial}</strong> partial</span>
     <span><strong>${stats.missed}</strong> missed</span>
   `;
+}
+
+function renderConcernTags(entry) {
+  els.concernGrid.innerHTML = "";
+  journalTags.forEach((tag) => {
+    const button = document.createElement("button");
+    button.className = `concern-chip${entry.tags.includes(tag) ? " is-active" : ""}`;
+    button.type = "button";
+    button.dataset.journalTag = tag;
+    button.textContent = tag;
+    els.concernGrid.append(button);
+  });
+}
+
+function renderPhotoGrid(entry) {
+  els.photoGrid.innerHTML = "";
+  photoSlots.forEach((slot) => {
+    const dataUrl = entry.photos?.[slot.id] || "";
+    const card = document.createElement("article");
+    card.className = `photo-card${dataUrl ? " has-photo" : ""}`;
+    card.innerHTML = `
+      <div class="photo-preview">
+        ${dataUrl ? `<img src="${dataUrl}" alt="${slot.label} progress photo">` : `<span>${slot.label}</span>`}
+      </div>
+      <div class="photo-card-foot">
+        <strong>${slot.label}</strong>
+        <div>
+          <label class="secondary-action quiet photo-add">
+            ${dataUrl ? "Change" : "Add"}
+            <input type="file" accept="image/*" capture="user" data-photo-input="${slot.id}">
+          </label>
+          ${dataUrl ? `<button class="secondary-action quiet" type="button" data-remove-photo="${slot.id}">Remove</button>` : ""}
+        </div>
+      </div>
+    `;
+    els.photoGrid.append(card);
+  });
+}
+
+function renderJournal() {
+  const key = dateKey(journalCursor);
+  const entry = loadJournalEntry(key);
+  const dateLabel = journalCursor.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  });
+  els.journalDateLabel.textContent = key === todayKey() ? `Today - ${dateLabel}` : dateLabel;
+  els.hydrationScore.value = entry.hydration;
+  els.hydrationValue.textContent = entry.hydration;
+  els.oilScore.value = entry.oil;
+  els.oilValue.textContent = entry.oil;
+  els.irritationScore.value = entry.irritation;
+  els.irritationValue.textContent = entry.irritation;
+  if (document.activeElement !== els.journalNotes) els.journalNotes.value = entry.notes || "";
+  renderConcernTags(entry);
+  renderPhotoGrid(entry);
+}
+
+async function savePhotoSlot(slotId, file) {
+  if (!file) return;
+  const key = dateKey(journalCursor);
+  const entry = loadJournalEntry(key);
+  const photos = {
+    ...entry.photos,
+    [slotId]: await resizePhoto(file)
+  };
+  saveJournalEntry(key, { ...entry, photos });
+  renderJournal();
+  renderHistory();
+}
+
+function removePhotoSlot(slotId) {
+  const key = dateKey(journalCursor);
+  const entry = loadJournalEntry(key);
+  const photos = { ...entry.photos };
+  delete photos[slotId];
+  saveJournalEntry(key, { ...entry, photos });
+  renderJournal();
+  renderHistory();
+}
+
+function toggleJournalTag(tag) {
+  const entry = loadJournalEntry(dateKey(journalCursor));
+  const tags = entry.tags.includes(tag) ? entry.tags.filter((item) => item !== tag) : [...entry.tags, tag];
+  updateJournalEntry({ tags });
 }
 
 function productLibrary() {
@@ -1510,6 +1712,7 @@ function refresh() {
   renderToday();
   renderSchedule();
   renderHistory();
+  renderJournal();
   renderProducts();
   renderReminderControls();
   updateStats();
@@ -1530,6 +1733,8 @@ document.addEventListener("click", (event) => {
   const moveEditStepButton = event.target.closest("[data-move-edit-step]");
   const cancelRoutineEditButton = event.target.closest("[data-cancel-routine-edit]");
   const historyDayButton = event.target.closest("[data-history-date]");
+  const journalTagButton = event.target.closest("[data-journal-tag]");
+  const removePhotoButton = event.target.closest("[data-remove-photo]");
   const tabButton = event.target.closest("[data-view]");
 
   if (addEditStepButton) addRoutineEditStep(els.stepList.querySelector("[data-add-step-position]")?.value || 0);
@@ -1537,6 +1742,8 @@ document.addEventListener("click", (event) => {
   if (moveEditStepButton) moveRoutineEditStep(Number(moveEditStepButton.dataset.moveEditStep), Number(moveEditStepButton.dataset.direction));
   if (cancelRoutineEditButton) cancelRoutineEdit();
   if (historyDayButton) openDay(historyDayButton.dataset.historyDate);
+  if (journalTagButton) toggleJournalTag(journalTagButton.dataset.journalTag);
+  if (removePhotoButton) removePhotoSlot(removePhotoButton.dataset.removePhoto);
   if (categoryButton) {
     selectedProductCategory = categoryButton.dataset.category;
     renderProducts();
@@ -1609,6 +1816,38 @@ els.historyToday.addEventListener("click", () => {
 els.historyNext.addEventListener("click", () => {
   historyCursor = new Date(historyCursor.getFullYear(), historyCursor.getMonth() + 1, 1);
   renderHistory();
+});
+els.journalPrev.addEventListener("click", () => {
+  journalCursor = addDays(journalCursor, -1);
+  renderJournal();
+});
+els.journalToday.addEventListener("click", () => {
+  journalCursor = new Date();
+  renderJournal();
+});
+els.journalNext.addEventListener("click", () => {
+  journalCursor = addDays(journalCursor, 1);
+  renderJournal();
+});
+els.hydrationScore.addEventListener("input", () => {
+  updateJournalEntry({ hydration: Number(els.hydrationScore.value) });
+});
+els.oilScore.addEventListener("input", () => {
+  updateJournalEntry({ oil: Number(els.oilScore.value) });
+});
+els.irritationScore.addEventListener("input", () => {
+  updateJournalEntry({ irritation: Number(els.irritationScore.value) });
+});
+els.journalNotes.addEventListener("input", () => {
+  const key = dateKey(journalCursor);
+  const entry = loadJournalEntry(key);
+  saveJournalEntry(key, { ...entry, notes: els.journalNotes.value });
+  renderHistory();
+});
+els.photoGrid.addEventListener("change", async (event) => {
+  if (!event.target.matches("[data-photo-input]")) return;
+  await savePhotoSlot(event.target.dataset.photoInput, event.target.files?.[0]);
+  event.target.value = "";
 });
 els.addProduct.addEventListener("click", () => {
   addCustomProduct(els.newProductName.value, els.newProductCategory.value);

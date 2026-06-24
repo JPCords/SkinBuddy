@@ -1,6 +1,6 @@
 # SkinBuddy
 
-Mobile-first skincare routine tracker built from the 24-hour skincare matrix.
+Mobile-first skincare routine tracker with fully customizable routines, products, reminders, and history.
 
 ## Phone URL
 

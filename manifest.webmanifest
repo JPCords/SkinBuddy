@@ -1,7 +1,7 @@
 {
   "name": "SkinBuddy",
   "short_name": "SkinBuddy",
-  "description": "Mobile skincare routine tracker built from the 24-hour skincare matrix.",
+  "description": "Mobile skincare routine tracker with customizable routines, products, reminders, and history.",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#050505",

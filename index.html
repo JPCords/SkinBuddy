@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#050505">
     <title>SkinBuddy</title>
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="stylesheet" href="styles.css?v=23">
+    <link rel="stylesheet" href="styles.css?v=26">
   </head>
   <body>
     <div class="app-shell">
@@ -38,7 +38,7 @@
           </div>
           <div>
             <strong id="activeDayName">Monday</strong>
-            <span>night plan</span>
+            <span>day plan</span>
           </div>
           <div>
             <strong id="streakCount">0</strong>
@@ -58,8 +58,8 @@
           <div class="today-controls" id="todayGymControls" aria-label="Today gym setting" hidden>
             <label class="toggle-card">
               <span>
-                <strong id="todayGymTitle">Gym day today</strong>
-                <small id="todayGymHint">Show all 3 routines</small>
+                <strong id="todayGymTitle">Full routine day</strong>
+                <small id="todayGymHint">Show all routine slots</small>
               </span>
               <input id="todayGymToggle" type="checkbox">
             </label>
@@ -138,7 +138,7 @@
               </label>
               <label class="reminder-row">
                 <input id="postGymReminderToggle" type="checkbox" data-reminder-toggle="postGym">
-                <span>Post-work</span>
+                <span>Second</span>
                 <input id="postGymReminderTime" type="time" data-reminder-time="postGym" value="17:00">
               </label>
               <label class="reminder-row">
@@ -176,6 +176,6 @@
       </div>
     </div>
 
-    <script src="app.js?v=23"></script>
+    <script src="app.js?v=26"></script>
   </body>
 </html>

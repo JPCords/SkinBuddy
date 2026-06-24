@@ -130,12 +130,35 @@ const nightSchedule = {
   }
 };
 
-const productCategories = {
-  Cleanser: "Cleanser",
-  Treatment: "Treatment",
-  Moisturizer: "Moisturizer",
-  Sunscreen: "Sunscreen"
-};
+const defaultProductCatalog = [
+  { category: "Cleansers", name: "Luxe Organix Whitening Repair Cleanser" },
+  { category: "Cleansers", name: "Skin1004 Madagascar Centella Light Cleansing Oil" },
+  { category: "Cleansers", name: "COSRX Low pH Good Morning Gel Cleanser" },
+  { category: "Sunscreens", name: "Skin1004 Madagascar Centella Hyalu-Cica Water-Fit Sun Serum SPF50+" },
+  { category: "Sunscreens", name: "Biore UV Aqua Rich Watery Gel SPF50+ PA++++" },
+  { category: "Toner / Lotion", name: "Skin1004 Madagascar Centella Toning Toner" },
+  { category: "Toner / Lotion", name: "Hada Labo Premium Hydrating Lotion" },
+  { category: "Essence", name: "COSRX Advanced Snail 96 Mucin Essence" },
+  { category: "Serums", name: "Revox B77 Just Vitamin C 20%" },
+  { category: "Serums", name: "GHK-Cu Serum" },
+  { category: "Serums", name: "Luxe Organix 10% Niacinamide Serum" },
+  { category: "Ampoules", name: "Skin1004 Madagascar Centella Ampoule" },
+  { category: "Ampoules", name: "Dr. Drawing PDRN Ampoule" },
+  { category: "Ampoules", name: "Dr. Drawing EGF Whitening Ampoule" },
+  { category: "Actives / Treatments", name: "Luxe Organix ClinicalPRO Retinol 0.2%" },
+  { category: "Actives / Treatments", name: "Oxecure Blackhead Clearing BHA/PHA Toner" },
+  { category: "Eye Care", name: "Luxe Organix Bright Eyes Eye Cream" },
+  { category: "Eye Care", name: "Luxe Organix Retinol + Bakuchiol Eye Cream" },
+  { category: "Moisturizer / Seal", name: "Skin1004 Madagascar Centella Soothing Cream" },
+  { category: "Moisturizer / Seal", name: "Neutrogena Hydro Boost 3D Sleeping Mask" },
+  { category: "Sheet Masks", name: "Aqua Lock - Hyaluronic Acid" },
+  { category: "Sheet Masks", name: "Cica Rescue - Centella Asiatica" },
+  { category: "Sheet Masks", name: "Miracle Solutions - Acne Derm+" },
+  { category: "Clay Masks", name: "Skintific Mugwort Clay Mask" },
+  { category: "Clay Masks", name: "Dark Fading Spot Niacinamide Clay Mask - Pink" }
+];
+
+const defaultProductCategories = [...new Set(defaultProductCatalog.map((product) => product.category))];
 
 const reminderDefinitions = {
   morning: {
@@ -833,81 +856,54 @@ function renderHistory() {
   `;
 }
 
-function productLibrary() {
-  const notes = new Map();
-  const categories = new Map();
-  const collect = (routine) => {
-    routine.steps.forEach((routineStep) => {
-      if (!notes.has(routineStep.product)) notes.set(routineStep.product, new Set());
-      notes.get(routineStep.product).add(routine.title || routine.day);
-      categories.set(routineStep.product, categoryForProduct(routineStep.product, routineStep.category));
-    });
+function productCatalogKey() {
+  return "skinbuddy:product-catalog-v2";
+}
+
+function cleanProduct(product) {
+  return {
+    name: String(product.name || "").trim(),
+    category: String(product.category || "Routine product").trim() || "Routine product"
   };
-  Object.values(routines).map(applyRoutineOverride).forEach(collect);
-  Object.entries(nightSchedule).forEach(([dayKey, item]) => collect(applyRoutineOverride({ id: `night-${dayKey}`, title: item.title, steps: item.steps })));
-  Object.values(loadRoutineOverrides()).forEach((override) => {
-    if (Array.isArray(override.steps)) collect({ title: override.title || "Edited routine", steps: override.steps.map(cleanRoutineStep) });
-  });
-  loadCustomProducts().forEach((product) => {
-    if (!notes.has(product.name)) notes.set(product.name, new Set());
-    notes.get(product.name).add("Product library");
-    categories.set(product.name, product.category);
-  });
-  return [...notes.entries()].map(([name, appearances]) => ({
-    name,
-    displayName: productDisplayName(name),
-    category: categories.get(name) || categoryForProduct(name),
-    appearances: [...appearances],
-    replacement: productReplacement(name),
-    custom: isCustomProduct(name)
-  }));
 }
 
-function customProductsKey() {
-  return "skinbuddy:custom-products";
-}
-
-function loadCustomProducts() {
+function loadProductCatalog() {
   try {
-    const products = JSON.parse(localStorage.getItem(customProductsKey()) || "[]");
-    if (!Array.isArray(products)) return [];
-    return products
-      .map((product) => ({
-        name: String(product.name || "").trim(),
-        category: String(product.category || "Routine product").trim() || "Routine product"
-      }))
-      .filter((product) => product.name);
+    const stored = localStorage.getItem(productCatalogKey());
+    if (!stored) return defaultProductCatalog.map(cleanProduct);
+    const products = JSON.parse(stored);
+    if (!Array.isArray(products)) return defaultProductCatalog.map(cleanProduct);
+    return products.map(cleanProduct).filter((product) => product.name);
   } catch {
-    return [];
+    return defaultProductCatalog.map(cleanProduct);
   }
 }
 
-function saveCustomProducts(products) {
-  localStorage.setItem(customProductsKey(), JSON.stringify(products));
+function saveProductCatalog(products) {
+  localStorage.setItem(
+    productCatalogKey(),
+    JSON.stringify(products.map(cleanProduct).filter((product) => product.name))
+  );
 }
 
-function isCustomProduct(name) {
-  return loadCustomProducts().some((product) => product.name === name);
-}
-
-function customProductCategory(name) {
-  return loadCustomProducts().find((product) => product.name === name)?.category || "";
+function productLibrary() {
+  return loadProductCatalog();
 }
 
 function categoryForProduct(name, fallback = "") {
-  return productCategories[name] || customProductCategory(name) || fallback || "Routine product";
+  return productLibrary().find((product) => product.name === name)?.category || fallback || "Routine product";
 }
 
-function addCustomProduct(name, category) {
+function addCatalogProduct(name, category) {
   const cleanName = name.trim();
   if (!cleanName) return;
-  const products = loadCustomProducts().filter((product) => product.name.toLowerCase() !== cleanName.toLowerCase());
+  const products = productLibrary().filter((product) => product.name.toLowerCase() !== cleanName.toLowerCase());
   products.push({ name: cleanName, category: category || "Routine product" });
-  saveCustomProducts(products.sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name)));
+  saveProductCatalog(products.sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name)));
 }
 
-function deleteCustomProduct(name) {
-  saveCustomProducts(loadCustomProducts().filter((product) => product.name !== name));
+function deleteCatalogProduct(name) {
+  saveProductCatalog(productLibrary().filter((product) => product.name !== name));
 }
 
 function productOptionsForCategory(category, currentProduct = "") {
@@ -925,41 +921,8 @@ function selectOptions(options, selected) {
     .join("");
 }
 
-function productOverridesKey() {
-  return "skinbuddy:product-overrides";
-}
-
-function loadProductOverrides() {
-  try {
-    const overrides = JSON.parse(localStorage.getItem(productOverridesKey()) || "{}");
-    return overrides && typeof overrides === "object" ? overrides : {};
-  } catch {
-    return {};
-  }
-}
-
-function saveProductOverrides(overrides) {
-  localStorage.setItem(productOverridesKey(), JSON.stringify(overrides));
-}
-
-function productReplacement(name) {
-  return loadProductOverrides()[name] || "";
-}
-
-function productDisplayName(name) {
-  return productReplacement(name) || name;
-}
-
-function setProductReplacement(name, replacement) {
-  const overrides = loadProductOverrides();
-  const clean = replacement.trim();
-  if (clean) overrides[name] = clean;
-  else delete overrides[name];
-  saveProductOverrides(overrides);
-}
-
 function productCategoriesList() {
-  return ["All", ...new Set(productLibrary().map((item) => item.category).sort((a, b) => a.localeCompare(b)))];
+  return ["All", ...new Set([...defaultProductCategories, ...productLibrary().map((item) => item.category)].sort((a, b) => a.localeCompare(b)))];
 }
 
 function editableProductCategories() {
@@ -992,7 +955,7 @@ function renderProducts() {
   els.productList.innerHTML = "";
   productLibrary()
     .filter((item) => selectedProductCategory === "All" || item.category === selectedProductCategory)
-    .filter((item) => `${item.name} ${item.displayName} ${item.category}`.toLowerCase().includes(query))
+    .filter((item) => `${item.name} ${item.category}`.toLowerCase().includes(query))
     .sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name))
     .forEach((item) => {
       const card = document.createElement("article");
@@ -1001,15 +964,11 @@ function renderProducts() {
         <div class="product-top">
           <div>
             <p class="eyebrow">${escapeHtml(item.category)}</p>
-            <h3>${escapeHtml(item.displayName)}</h3>
-            <p class="product-meta">${item.replacement ? `Original: ${escapeHtml(item.name)} - ` : ""}${escapeHtml(item.appearances.join(", "))}</p>
+            <h3>${escapeHtml(item.name)}</h3>
           </div>
         </div>
-        <div class="swap-row">
-          <input type="text" value="${escapeHtml(item.replacement)}" placeholder="Display as" aria-label="Display ${escapeHtml(item.name)} as" data-product-input>
-          <button class="secondary-action" type="button" data-save-product="${escapeHtml(item.name)}">Save</button>
-          <button class="secondary-action quiet" type="button" data-reset-product="${escapeHtml(item.name)}">Reset</button>
-          ${item.custom ? `<button class="secondary-action quiet" type="button" data-delete-product="${escapeHtml(item.name)}">Delete</button>` : ""}
+        <div class="product-actions">
+          <button class="secondary-action quiet" type="button" data-delete-product="${escapeHtml(item.name)}">Delete</button>
         </div>
       `;
       els.productList.append(card);
@@ -1122,8 +1081,6 @@ function renderSteps(routine) {
   }
   routine.steps.forEach((routineStep, index) => {
     const done = isDone(routine.id, index, selectedDateKey || todayKey());
-    const displayProduct = productDisplayName(routineStep.product);
-    const replacementNote = displayProduct !== routineStep.product ? `<span class="product-swap-note">Swapped from ${escapeHtml(routineStep.product)}</span>` : "";
     const row = document.createElement("article");
     row.className = `step-row${done ? " is-done" : ""}`;
     row.innerHTML = `
@@ -1133,7 +1090,7 @@ function renderSteps(routine) {
           <strong>${index + 1}. ${routineStep.action}</strong>
           <span class="badge">${escapeHtml(categoryForProduct(routineStep.product, routineStep.category))}</span>
         </div>
-        <p class="step-text"><strong>${escapeHtml(displayProduct)}</strong>${replacementNote}<br>${escapeHtml(routineStep.application)}</p>
+        <p class="step-text"><strong>${escapeHtml(routineStep.product)}</strong><br>${escapeHtml(routineStep.application)}</p>
         ${routineStep.nuance ? `<p class="step-note">${escapeHtml(routineStep.nuance)}</p>` : ""}
         ${routineStep.timerSeconds ? timerMarkup(routine.id, index, routineStep) : ""}
       </div>
@@ -1487,8 +1444,6 @@ document.addEventListener("click", (event) => {
   const timerButton = event.target.closest("[data-timer]");
   const clearTimerButton = event.target.closest("[data-clear-timer]");
   const categoryButton = event.target.closest("[data-category]");
-  const saveProductButton = event.target.closest("[data-save-product]");
-  const resetProductButton = event.target.closest("[data-reset-product]");
   const deleteProductButton = event.target.closest("[data-delete-product]");
   const addEditStepButton = event.target.closest("[data-add-edit-step]");
   const deleteEditStepButton = event.target.closest("[data-delete-edit-step]");
@@ -1506,17 +1461,8 @@ document.addEventListener("click", (event) => {
     selectedProductCategory = categoryButton.dataset.category;
     renderProducts();
   }
-  if (saveProductButton) {
-    const input = saveProductButton.closest(".product-card")?.querySelector("[data-product-input]");
-    setProductReplacement(saveProductButton.dataset.saveProduct, input?.value || "");
-    refresh();
-  }
-  if (resetProductButton) {
-    setProductReplacement(resetProductButton.dataset.resetProduct, "");
-    refresh();
-  }
   if (deleteProductButton) {
-    deleteCustomProduct(deleteProductButton.dataset.deleteProduct);
+    deleteCatalogProduct(deleteProductButton.dataset.deleteProduct);
     refresh();
   }
   if (openButton) openRoutine(openButton.dataset.open, openButton.dataset.date || todayKey());
@@ -1576,7 +1522,7 @@ els.historyNext.addEventListener("click", () => {
   renderHistory();
 });
 els.addProduct.addEventListener("click", () => {
-  addCustomProduct(els.newProductName.value, els.newProductCategory.value);
+  addCatalogProduct(els.newProductName.value, els.newProductCategory.value);
   els.newProductName.value = "";
   refresh();
 });

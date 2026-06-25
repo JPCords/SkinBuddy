@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#050505">
     <title>SkinBuddy</title>
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="stylesheet" href="styles.css?v=27">
+    <link rel="stylesheet" href="styles.css?v=28">
   </head>
   <body>
     <div class="app-shell">
@@ -68,11 +68,34 @@
             <strong>Day complete</strong>
             <span>All routines for today are logged.</span>
           </div>
+          <section class="template-picker-panel" aria-label="Add template to today">
+            <div>
+              <p class="eyebrow">Schedule templates</p>
+              <h3>Add routine to today</h3>
+            </div>
+            <div class="template-picker-actions">
+              <select id="todayTemplateSelect" aria-label="Choose routine template"></select>
+              <button class="secondary-action" id="addTodayTemplate" type="button">Add</button>
+            </div>
+          </section>
           <div id="routineList" class="routine-list"></div>
         </section>
 
         <section class="view" id="scheduleView" aria-label="Weekly schedule">
-          <div class="week-grid" id="weekGrid"></div>
+          <section class="schedule-panel" aria-label="Weekly plan">
+            <div>
+              <p class="eyebrow">Weekly plan</p>
+              <h3>Schedule</h3>
+            </div>
+            <div class="week-grid" id="weekGrid"></div>
+          </section>
+          <section class="schedule-panel" aria-label="Routine templates">
+            <div>
+              <p class="eyebrow">Matrix reference</p>
+              <h3>Routine templates</h3>
+            </div>
+            <div id="templateList" class="template-list"></div>
+          </section>
         </section>
 
         <section class="view" id="historyView" aria-label="Calendar history">
@@ -176,6 +199,6 @@
       </div>
     </div>
 
-    <script src="app.js?v=27"></script>
+    <script src="app.js?v=28"></script>
   </body>
 </html>

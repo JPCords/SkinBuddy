@@ -1,50 +1,75 @@
 const routines = {
   preGym: {
     id: "preGym",
-    title: "Morning Routine",
-    time: "Morning",
+    title: "Pre-Gym Morning Routine",
+    time: "11:00 AM / 12:00 PM",
     startsAt: 11,
-    summary: "Your first routine slot of the day.",
+    summary: "A light cleanse and sunscreen routine from the original matrix.",
     warnings: [],
     steps: [
       {
         action: "Cleanse",
-        product: "Cleanser",
-        application: "Use your preferred cleanser.",
-        nuance: "Edit this step to match your routine."
+        product: "Luxe Organix Whitening Repair Cleanser",
+        application: "Massage onto damp skin with lukewarm water. Rinse cleanly and pat dry.",
+        nuance: "Avoid stripping gel cleansers here. Save heavier cleansing for after your workout."
       },
       {
         action: "Protect",
-        product: "Sunscreen",
-        application: "Apply your preferred sunscreen.",
-        nuance: "Replace this with your daytime final step if needed."
+        product: "Skin1004 Madagascar Centella Hyalu-Cica Water-Fit Sun Serum SPF50+",
+        application: "Apply a generous, two-finger length amount to your face and neck.",
+        nuance: "Use this as the final daytime layer before gym sweat. Avoid adding a separate cream underneath."
       }
     ]
   },
   postGym: {
     id: "postGym",
-    title: "Second Routine",
-    time: "Afternoon",
+    title: "Post-Gym Pre-Work Routine",
+    time: "5:00 PM",
     startsAt: 17,
-    summary: "Your optional second routine slot.",
+    summary: "The matrix double-cleanse, Vitamin C, hydration, eye care, and seal routine.",
     warnings: [],
     steps: [
       {
-        action: "Cleanse",
-        product: "Cleanser",
-        application: "Cleanse as needed."
+        action: "First Cleanse",
+        product: "Skin1004 Madagascar Centella Light Cleansing Oil",
+        application: "Massage 1-2 pumps onto completely dry skin for 30 seconds. Emulsify with water, then rinse thoroughly.",
+        nuance: "This removes water-resistant sunscreen, sweat, and sun filters before the water-based cleanser."
       },
       {
-        action: "Treat",
-        product: "Treatment",
-        application: "Apply your preferred treatment.",
+        action: "Second Cleanse",
+        product: "COSRX Low pH Good Morning Gel Cleanser",
+        application: "Work into a foam, cleanse away remaining oil residue, and pat skin completely dry."
+      },
+      {
+        action: "Active",
+        product: "Revox B77 Just Vitamin C 20%",
+        application: "Smooth 3-4 drops over your bare, dry face.",
+        nuance: "Wait 3-5 minutes before the next step. Keep Luxe Organix 10% Niacinamide out of this slot.",
         timerLabel: "5 min wait",
         timerSeconds: 300
       },
       {
-        action: "Moisturize",
-        product: "Moisturizer",
-        application: "Seal with your preferred moisturizer."
+        action: "Tone",
+        product: "Skin1004 Madagascar Centella Toning Toner",
+        application: "Pour a few drops into your palms and pat into the skin.",
+        nuance: "Centella helps cool post-gym skin."
+      },
+      {
+        action: "Shield",
+        product: "COSRX Advanced Snail 96 Mucin Essence",
+        application: "Smooth 2 full pumps onto your face while it is still damp from toner.",
+        nuance: "The extra hydration layer helps protect against dry indoor air."
+      },
+      {
+        action: "Eyes",
+        product: "Luxe Organix Bright Eyes Eye Cream",
+        application: "Tap a pea-sized amount lightly around the orbital bone."
+      },
+      {
+        action: "Seal",
+        product: "Skin1004 Madagascar Centella Soothing Cream",
+        application: "Smooth a dime-sized layer over your face as your final step.",
+        nuance: "This gel-cream seals hydration while keeping the finish soft-matte."
       }
     ]
   }
@@ -53,79 +78,122 @@ const routines = {
 const nightSchedule = {
   monday: {
     day: "Monday",
-    title: "Night Routine",
+    title: "Sheet Mask + Deep Recovery Night",
     time: "2:00 AM",
-    warnings: [],
+    startsAt: 26,
+    summary: "A deep recovery matrix night with sheet mask, peptides, PDRN, and niacinamide.",
+    warnings: ["Do these steps immediately after logging off from your work shift."],
     steps: [
-      step("Cleanse", "Cleanser", "Use your preferred cleanser."),
-      step("Treat", "Treatment", "Apply your preferred treatment."),
-      step("Moisturize", "Moisturizer", "Seal with your preferred moisturizer.")
+      step("Cleanse", "COSRX Low pH Good Morning Gel Cleanser", "Wash and pat dry."),
+      step("Tone", "Skin1004 Madagascar Centella Toning Toner", "Pat into skin."),
+      step("Mask", "Aqua Lock - Hyaluronic Acid", "Apply for 15 minutes. Remove and pat in excess fluid.", "Use your preferred sheet mask.", 900),
+      step("Essence", "COSRX Advanced Snail 96 Mucin Essence", "Apply 1 pump to damp skin."),
+      step("Ampoule", "Skin1004 Madagascar Centella Ampoule", "Apply 1 full dropper."),
+      step("Peptide", "GHK-Cu Serum", "Apply 3-4 drops and press gently.", "Copper peptides thrive on active-free recovery nights."),
+      step("Repair", "Dr. Drawing PDRN Ampoule", "Layer next over peptides."),
+      step("Brighten", "Luxe Organix 10% Niacinamide Serum", "Pat 2-3 drops across your face.", "Keep high-strength niacinamide isolated at night, away from the 5:00 PM Vitamin C."),
+      step("Seal", "Neutrogena Hydro Boost 3D Sleeping Mask", "Apply a thin layer to freeze hydration levels until morning.")
     ]
   },
   tuesday: {
     day: "Tuesday",
-    title: "Night Routine",
+    title: "Recovery Night + Retinol Eye Care",
     time: "2:00 AM",
-    warnings: [],
+    startsAt: 26,
+    summary: "A recovery matrix night with peptides, PDRN, niacinamide, and retinol eye cream.",
+    warnings: ["Use retinol eye cream only around the orbital bone."],
     steps: [
-      step("Cleanse", "Cleanser", "Use your preferred cleanser."),
-      step("Treat", "Treatment", "Apply your preferred treatment."),
-      step("Moisturize", "Moisturizer", "Seal with your preferred moisturizer.")
+      step("Cleanse", "COSRX Low pH Good Morning Gel Cleanser", "Wash and pat dry."),
+      step("Tone", "Skin1004 Madagascar Centella Toning Toner", "Pat into skin."),
+      step("Essence", "COSRX Advanced Snail 96 Mucin Essence", "Apply 1 pump to damp skin."),
+      step("Ampoule", "Skin1004 Madagascar Centella Ampoule", "Apply 1 full dropper."),
+      step("Peptide", "GHK-Cu Serum", "Apply 3-4 drops."),
+      step("Repair", "Dr. Drawing PDRN Ampoule", "Layer over peptides."),
+      step("Brighten", "Luxe Organix 10% Niacinamide Serum", "Pat 2-3 drops over your face."),
+      step("Eyes", "Luxe Organix Retinol + Bakuchiol Eye Cream", "Tap gently around the eye area only."),
+      step("Seal", "Neutrogena Hydro Boost 3D Sleeping Mask", "Apply a thin layer to seal.")
     ]
   },
   wednesday: {
     day: "Wednesday",
-    title: "Night Routine",
+    title: "Pore-Clearing BHA Night",
     time: "2:00 AM",
-    warnings: [],
+    startsAt: 26,
+    summary: "A matrix exfoliation night with BHA/PHA, calming centella, and hydration.",
+    warnings: ["Do not use GHK-Cu or 10% Niacinamide with this BHA/PHA routine."],
     steps: [
-      step("Cleanse", "Cleanser", "Use your preferred cleanser."),
-      step("Treat", "Treatment", "Apply your preferred treatment."),
-      step("Moisturize", "Moisturizer", "Seal with your preferred moisturizer.")
+      step("Cleanse", "COSRX Low pH Good Morning Gel Cleanser", "Wash and pat completely dry."),
+      step("Exfoliate", "Oxecure Blackhead Clearing BHA/PHA Toner", "Apply to your dry face. Wait 1 full minute.", "Avoid peptides and high-strength niacinamide tonight.", 60),
+      step("Calm", "Skin1004 Madagascar Centella Ampoule", "Apply 1 full dropper to soothe the pore lining after exfoliation."),
+      step("Essence", "COSRX Advanced Snail 96 Mucin Essence", "Apply 1 pump."),
+      step("Seal", "Neutrogena Hydro Boost 3D Sleeping Mask", "Apply a thin layer to seal.")
     ]
   },
   thursday: {
     day: "Thursday",
-    title: "Night Routine",
+    title: "Deep Retinol Night",
     time: "2:00 AM",
-    warnings: [],
+    startsAt: 26,
+    summary: "The matrix retinol sandwich method with hydrating lotion, buffer cream, retinol, and seal.",
+    warnings: ["Do not use GHK-Cu or 10% Niacinamide with this retinol routine."],
     steps: [
-      step("Cleanse", "Cleanser", "Use your preferred cleanser."),
-      step("Treat", "Treatment", "Apply your preferred treatment."),
-      step("Moisturize", "Moisturizer", "Seal with your preferred moisturizer.")
+      step("Cleanse", "COSRX Low pH Good Morning Gel Cleanser", "Wash and pat dry."),
+      step("Hydrate", "Hada Labo Premium Hydrating Lotion", "Pat onto damp skin."),
+      step("Buffer", "Skin1004 Madagascar Centella Soothing Cream", "Apply a thin layer across your face first.", "This acts as a weightless protective buffer before retinol."),
+      step("Retinol", "Luxe Organix ClinicalPRO Retinol 0.2%", "Smooth a pea-sized amount over the dry cream layer."),
+      step("Seal", "Neutrogena Hydro Boost 3D Sleeping Mask", "Apply a final layer to lock down the treatment.")
     ]
   },
   friday: {
     day: "Friday",
-    title: "Night Routine",
+    title: "Recovery Night + Retinol Eye Care",
     time: "2:00 AM",
-    warnings: [],
+    startsAt: 26,
+    summary: "A second recovery matrix night with retinol eye care.",
+    warnings: ["Use retinol eye cream only around the orbital bone."],
     steps: [
-      step("Cleanse", "Cleanser", "Use your preferred cleanser."),
-      step("Treat", "Treatment", "Apply your preferred treatment."),
-      step("Moisturize", "Moisturizer", "Seal with your preferred moisturizer.")
+      step("Cleanse", "COSRX Low pH Good Morning Gel Cleanser", "Wash and pat dry."),
+      step("Tone", "Skin1004 Madagascar Centella Toning Toner", "Pat into skin."),
+      step("Essence", "COSRX Advanced Snail 96 Mucin Essence", "Apply 1 pump to damp skin."),
+      step("Ampoule", "Skin1004 Madagascar Centella Ampoule", "Apply 1 full dropper."),
+      step("Peptide", "GHK-Cu Serum", "Apply 3-4 drops."),
+      step("Repair", "Dr. Drawing PDRN Ampoule", "Layer over peptides."),
+      step("Brighten", "Luxe Organix 10% Niacinamide Serum", "Pat 2-3 drops over your face."),
+      step("Eyes", "Luxe Organix Retinol + Bakuchiol Eye Cream", "Tap gently around the eyes only."),
+      step("Seal", "Neutrogena Hydro Boost 3D Sleeping Mask", "Apply a thin layer to seal.")
     ]
   },
   saturday: {
     day: "Saturday",
-    title: "Night Routine",
+    title: "Deep Radiance Glow Night",
     time: "2:00 AM",
-    warnings: [],
+    startsAt: 26,
+    summary: "The matrix radiance night with EGF, centella, niacinamide, and sleeping mask.",
+    warnings: ["Keep GHK-Cu out of this radiance night."],
     steps: [
-      step("Cleanse", "Cleanser", "Use your preferred cleanser."),
-      step("Treat", "Treatment", "Apply your preferred treatment."),
-      step("Moisturize", "Moisturizer", "Seal with your preferred moisturizer.")
+      step("Cleanse", "COSRX Low pH Good Morning Gel Cleanser", "Wash and pat dry."),
+      step("Tone", "Skin1004 Madagascar Centella Toning Toner", "Pat into skin."),
+      step("Essence", "COSRX Advanced Snail 96 Mucin Essence", "Apply 1 pump."),
+      step("Glow", "Dr. Drawing EGF Whitening Ampoule", "Apply 1 dropper.", "Isolate copper peptide away from this whitening growth-factor ampoule."),
+      step("Calm", "Skin1004 Madagascar Centella Ampoule", "Apply 1 full dropper."),
+      step("Brighten", "Luxe Organix 10% Niacinamide Serum", "Pat 2-3 drops over your face."),
+      step("Seal", "Neutrogena Hydro Boost 3D Sleeping Mask", "Apply a thin layer to seal.")
     ]
   },
   sunday: {
     day: "Sunday",
-    title: "Night Routine",
+    title: "Pore Detox Clay Mask Night",
     time: "2:00 AM",
-    warnings: [],
+    startsAt: 26,
+    summary: "A matrix detox night with clay mask, calming layers, and a hydration seal.",
+    warnings: ["Avoid GHK-Cu and 10% Niacinamide immediately after the clay mask."],
     steps: [
-      step("Cleanse", "Cleanser", "Use your preferred cleanser."),
-      step("Treat", "Treatment", "Apply your preferred treatment."),
-      step("Moisturize", "Moisturizer", "Seal with your preferred moisturizer.")
+      step("Cleanse", "COSRX Low pH Good Morning Gel Cleanser", "Wash and pat completely dry."),
+      step("Mask", "Skintific Mugwort Clay Mask", "Smooth a layer over oily zones. Wash off cleanly with warm water after 10 minutes. Pat dry.", "Your skin barrier can be vulnerable right after a deep clay mask.", 600),
+      step("Tone", "Skin1004 Madagascar Centella Toning Toner", "Pat into skin."),
+      step("Essence", "COSRX Advanced Snail 96 Mucin Essence", "Apply 1 pump."),
+      step("Calm", "Skin1004 Madagascar Centella Ampoule", "Apply 1 full dropper to deeply calm skin."),
+      step("Seal", "Neutrogena Hydro Boost 3D Sleeping Mask", "Apply a thin layer to restore deep water moisture.")
     ]
   }
 };
@@ -201,12 +269,15 @@ const els = {
   todayGymHint: document.querySelector("#todayGymHint"),
   todayGymToggle: document.querySelector("#todayGymToggle"),
   todayCompleteBanner: document.querySelector("#todayCompleteBanner"),
+  todayTemplateSelect: document.querySelector("#todayTemplateSelect"),
+  addTodayTemplate: document.querySelector("#addTodayTemplate"),
   notificationStatus: document.querySelector("#notificationStatus"),
   notificationButton: document.querySelector("#notificationButton"),
   timerAlertToggle: document.querySelector("#timerAlertToggle"),
   timerAlertState: document.querySelector("#timerAlertState"),
   routineList: document.querySelector("#routineList"),
   weekGrid: document.querySelector("#weekGrid"),
+  templateList: document.querySelector("#templateList"),
   historyMonthLabel: document.querySelector("#historyMonthLabel"),
   historySummary: document.querySelector("#historySummary"),
   historyGrid: document.querySelector("#historyGrid"),
@@ -295,8 +366,48 @@ function cleanRoutineMeta(routine) {
   };
 }
 
+const dayOrder = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+
+function nightTemplateId(dayKey) {
+  return `night-${dayKey}`;
+}
+
+function defaultScheduleForDay(dayKey) {
+  const base = ["preGym"];
+  if (!isWeekend(dayKey)) base.push("postGym");
+  base.push(nightTemplateId(dayKey));
+  return base;
+}
+
+function defaultWeeklySchedule() {
+  return Object.fromEntries(dayOrder.map((dayKey) => [dayKey, defaultScheduleForDay(dayKey)]));
+}
+
+function routineTemplateLibrary() {
+  return [
+    { ...routines.preGym },
+    { ...routines.postGym },
+    ...dayOrder.map((dayKey) => ({
+      id: nightTemplateId(dayKey),
+      dayKey,
+      summary: nightSchedule[dayKey].summary || "Your matrix night routine template.",
+      ...nightSchedule[dayKey]
+    }))
+  ].map((routine) => applyRoutineOverride(routine));
+}
+
+function routineTemplateById(id) {
+  const template = routineTemplateLibrary().find((routine) => routine.id === id);
+  return template || null;
+}
+
+function validTemplateIds(ids) {
+  const valid = new Set(routineTemplateLibrary().map((routine) => routine.id));
+  return [...new Set((Array.isArray(ids) ? ids : []).filter((id) => valid.has(id)))];
+}
+
 function routineOverridesKey() {
-  return "skinbuddy:routine-overrides";
+  return "skinbuddy:template-overrides-v1";
 }
 
 function loadRoutineOverrides() {
@@ -350,6 +461,74 @@ function applyRoutineOverride(routine) {
     steps: override.steps.map(cleanRoutineStep),
     isEdited: true
   };
+}
+
+function weeklyScheduleKey() {
+  return "skinbuddy:weekly-schedule-v1";
+}
+
+function loadWeeklySchedule() {
+  const defaults = defaultWeeklySchedule();
+  try {
+    const stored = JSON.parse(localStorage.getItem(weeklyScheduleKey()) || "null");
+    return Object.fromEntries(
+      dayOrder.map((dayKey) => {
+        const ids = validTemplateIds(stored?.[dayKey]);
+        return [dayKey, ids.length ? ids : defaults[dayKey]];
+      })
+    );
+  } catch {
+    return defaults;
+  }
+}
+
+function saveWeeklySchedule(schedule) {
+  localStorage.setItem(weeklyScheduleKey(), JSON.stringify(schedule));
+}
+
+function scheduledTemplateIds(dayKey) {
+  return loadWeeklySchedule()[dayKey] || defaultScheduleForDay(dayKey);
+}
+
+function setScheduledTemplateIds(dayKey, ids) {
+  const schedule = loadWeeklySchedule();
+  const cleanIds = validTemplateIds(ids);
+  schedule[dayKey] = cleanIds.length ? cleanIds : defaultScheduleForDay(dayKey);
+  saveWeeklySchedule(schedule);
+}
+
+function dateScheduleOverridesKey() {
+  return "skinbuddy:date-schedule-overrides-v1";
+}
+
+function loadDateScheduleOverrides() {
+  try {
+    const overrides = JSON.parse(localStorage.getItem(dateScheduleOverridesKey()) || "{}");
+    return overrides && typeof overrides === "object" ? overrides : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveDateScheduleOverrides(overrides) {
+  localStorage.setItem(dateScheduleOverridesKey(), JSON.stringify(overrides));
+}
+
+function getDayTemplateIds(date = new Date()) {
+  const key = dateKey(date);
+  const overrides = loadDateScheduleOverrides();
+  const dayKey = getDayKey(date);
+  const overrideIds = validTemplateIds(overrides[key]);
+  return overrideIds.length ? overrideIds : scheduledTemplateIds(dayKey);
+}
+
+function setTodayTemplateIds(ids) {
+  const key = activeSkincareDayKey();
+  const overrides = loadDateScheduleOverrides();
+  const cleanIds = validTemplateIds(ids);
+  if (cleanIds.length) overrides[key] = cleanIds;
+  else delete overrides[key];
+  saveDateScheduleOverrides(overrides);
 }
 
 function dateKey(date) {
@@ -424,24 +603,15 @@ function gymSettingKey(dayKey) {
 function isGymDay(date = new Date()) {
   const dayKey = getDayKey(date);
   if (!isWeekend(dayKey)) return true;
-  return localStorage.getItem(gymSettingKey(dayKey)) === "1";
+  return scheduledTemplateIds(dayKey).includes("postGym");
 }
 
 function setGymDay(dayKey, enabled) {
   localStorage.setItem(gymSettingKey(dayKey), enabled ? "1" : "0");
-}
-
-function weekendMorningRoutine(dayKey) {
-  return {
-    ...routines.postGym,
-    id: `weekendMorning-${dayKey}`,
-    title: "Morning Routine",
-    time: "Morning",
-    startsAt: 11,
-    summary: "Your weekend morning routine slot.",
-    warnings: [],
-    steps: routines.postGym.steps
-  };
+  if (!isWeekend(dayKey)) return;
+  const ids = scheduledTemplateIds(dayKey).filter((id) => id !== "postGym");
+  const nextIds = enabled ? [ids[0] || "preGym", "postGym", ...ids.slice(1)] : ids;
+  setScheduledTemplateIds(dayKey, nextIds);
 }
 
 function getNightRoutine(date = new Date()) {
@@ -454,9 +624,9 @@ function getNightRoutine(date = new Date()) {
 }
 
 function getDayRoutines(date = new Date()) {
-  const dayKey = getDayKey(date);
-  const list = isGymDay(date) ? [routines.preGym, routines.postGym, getNightRoutine(date)] : [weekendMorningRoutine(dayKey), getNightRoutine(date)];
-  return list.map(applyRoutineOverride);
+  return getDayTemplateIds(date)
+    .map(routineTemplateById)
+    .filter(Boolean);
 }
 
 function getTodayRoutines() {
@@ -465,7 +635,7 @@ function getTodayRoutines() {
 
 function getNextRoutine() {
   const activeKey = activeSkincareDayKey();
-  const list = getTodayRoutines();
+  const list = [...getTodayRoutines()].sort((first, second) => (first.startsAt ?? 26) - (second.startsAt ?? 26));
   if (activeKey !== todayKey()) {
     return list.find((routine) => routineProgress(routine, activeKey).done < routine.steps.length) || list[list.length - 1];
   }
@@ -724,6 +894,18 @@ function renderToday() {
     els.todayGymHint.textContent = enabled ? "Show all routine slots" : "Use the simplified weekend routine slots";
   }
   els.todayCompleteBanner.hidden = !isDayComplete(key);
+  const templates = routineTemplateLibrary();
+  const scheduledIds = new Set(getDayTemplateIds(activeDate));
+  const availableTemplates = templates.filter((template) => !scheduledIds.has(template.id));
+  const templateOptions = (availableTemplates.length ? availableTemplates : templates).map((template) => ({
+    value: template.id,
+    label: template.title
+  }));
+  els.todayTemplateSelect.innerHTML = templateOptions
+    .map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`)
+    .join("");
+  els.addTodayTemplate.disabled = !availableTemplates.length;
+  els.addTodayTemplate.textContent = availableTemplates.length ? "Add" : "Added";
   els.routineList.innerHTML = "";
   getTodayRoutines().forEach((routine) => {
     const progress = routineProgress(routine, key);
@@ -753,8 +935,7 @@ function renderSchedule() {
   const currentDate = activeSkincareDayKey();
   getCurrentWeekDates().forEach((date) => {
     const key = getDayKey(date);
-    const item = getNightRoutine(date);
-    const routinesForDate = getDayRoutines(date);
+    const routinesForDate = scheduledTemplateIds(key).map(routineTemplateById).filter(Boolean);
     const scheduleDateKey = dateKey(date);
     const progress = routinesForDate.reduce((sum, routine) => sum + routineProgress(routine, scheduleDateKey).done, 0);
     const total = routinesForDate.reduce((sum, routine) => sum + routine.steps.length, 0);
@@ -763,8 +944,8 @@ function renderSchedule() {
     card.innerHTML = `
       <div class="day-top">
         <div>
-          <p class="eyebrow">${item.day} - ${date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
-          <h3>${item.title}</h3>
+          <p class="eyebrow">${nightSchedule[key].day} - ${date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
+          <h3>${routinesForDate.length} routine${routinesForDate.length === 1 ? "" : "s"}</h3>
           <p class="day-meta">${routinesForDate.length} routines - ${progress}/${total} steps logged</p>
         </div>
         <span class="badge">${isGymDay(date) ? "full day" : "simple day"}</span>
@@ -775,6 +956,24 @@ function renderSchedule() {
     `;
     card.addEventListener("click", () => openDay(scheduleDateKey));
     els.weekGrid.append(card);
+  });
+
+  els.templateList.innerHTML = "";
+  routineTemplateLibrary().forEach((template) => {
+    const card = document.createElement("article");
+    card.className = "template-card";
+    card.innerHTML = `
+      <div>
+        <p class="eyebrow">${template.time}</p>
+        <h3>${escapeHtml(template.title)}</h3>
+        <p class="routine-meta">${escapeHtml(template.summary)}</p>
+      </div>
+      <div class="template-card-foot">
+        <span class="pill">${template.steps.length} steps</span>
+        <button class="secondary-action" type="button" data-open-template="${escapeHtml(template.id)}">Edit</button>
+      </div>
+    `;
+    els.templateList.append(card);
   });
 }
 
@@ -977,7 +1176,7 @@ function renderProducts() {
 
 function routineById(id, key = todayKey()) {
   const match = getDayRoutines(dateFromKey(key)).find((routine) => routine.id === id);
-  return match || getNextRoutine();
+  return match || routineTemplateById(id) || getNextRoutine();
 }
 
 function openDay(key) {
@@ -1001,14 +1200,51 @@ function openDay(key) {
 
 function renderDayRoutineCards(key) {
   const date = dateFromKey(key);
+  const dayKey = getDayKey(date);
+  const routinesForDate = scheduledTemplateIds(dayKey).map(routineTemplateById).filter(Boolean);
   els.stepList.innerHTML = "";
+  const scheduleEditor = document.createElement("section");
+  scheduleEditor.className = "day-schedule-editor";
+  const templateOptions = routineTemplateLibrary()
+    .map((template) => `<option value="${escapeHtml(template.id)}">${escapeHtml(template.title)}</option>`)
+    .join("");
+  scheduleEditor.innerHTML = `
+    <div class="edit-banner">
+      <strong>Edit day schedule</strong>
+      <span>Add, remove, or reorder the templates used for this weekday.</span>
+    </div>
+    <div class="template-picker-actions">
+      <select data-day-template-select aria-label="Choose template">${templateOptions}</select>
+      <button class="secondary-action" type="button" data-day-add-template="${dayKey}">Add</button>
+    </div>
+    <div class="scheduled-template-list">
+      ${routinesForDate
+        .map(
+          (routine, index) => `
+            <div class="scheduled-template-row">
+              <div>
+                <strong>${escapeHtml(routine.title)}</strong>
+                <span>${escapeHtml(routine.time)} - ${routine.steps.length} steps</span>
+              </div>
+              <div class="scheduled-template-actions">
+                <button class="secondary-action quiet" type="button" data-move-day-template="${index}" data-day="${dayKey}" data-direction="-1" ${index === 0 ? "disabled" : ""}>Up</button>
+                <button class="secondary-action quiet" type="button" data-move-day-template="${index}" data-day="${dayKey}" data-direction="1" ${index === routinesForDate.length - 1 ? "disabled" : ""}>Down</button>
+                <button class="secondary-action quiet" type="button" data-remove-day-template="${index}" data-day="${dayKey}" ${routinesForDate.length <= 1 ? "disabled" : ""}>Delete</button>
+              </div>
+            </div>
+          `
+        )
+        .join("")}
+    </div>
+  `;
+  els.stepList.append(scheduleEditor);
   if (isDayComplete(key)) {
     const banner = document.createElement("div");
     banner.className = "complete-banner";
     banner.innerHTML = "<strong>Day complete</strong><span>All routines for this day are logged.</span>";
     els.stepList.append(banner);
   }
-  getDayRoutines(date).forEach((routine) => {
+  routinesForDate.forEach((routine) => {
     const progress = routineProgress(routine, key);
     const card = document.createElement("article");
     card.className = "routine-card";
@@ -1029,6 +1265,19 @@ function renderDayRoutineCards(key) {
     `;
     els.stepList.append(card);
   });
+}
+
+function openTemplate(id) {
+  selectedRoutine = routineTemplateById(id);
+  if (!selectedRoutine) return;
+  selectedDateKey = todayKey();
+  routineEditMode = true;
+  updateSheetRoutineHeader(selectedRoutine, selectedDateKey);
+  updateRoutineEditControls(selectedRoutine);
+  renderWarnings(selectedRoutine);
+  renderSteps(selectedRoutine);
+  els.routineSheet.classList.add("is-open");
+  els.routineSheet.setAttribute("aria-hidden", "false");
 }
 
 function openRoutine(id, key = todayKey()) {
@@ -1427,6 +1676,34 @@ function resetRoutine(id, key = todayKey()) {
   refresh();
 }
 
+function addTemplateToDay(dayKey, templateId) {
+  const ids = scheduledTemplateIds(dayKey);
+  if (!templateId || ids.includes(templateId)) return;
+  setScheduledTemplateIds(dayKey, [...ids, templateId]);
+  renderDayRoutineCards(selectedDateKey || todayKey());
+  refresh();
+}
+
+function removeTemplateFromDay(dayKey, index) {
+  const ids = scheduledTemplateIds(dayKey);
+  if (ids.length <= 1) return;
+  ids.splice(index, 1);
+  setScheduledTemplateIds(dayKey, ids);
+  renderDayRoutineCards(selectedDateKey || todayKey());
+  refresh();
+}
+
+function moveTemplateInDay(dayKey, index, direction) {
+  const ids = scheduledTemplateIds(dayKey);
+  const target = index + direction;
+  if (target < 0 || target >= ids.length) return;
+  const [moved] = ids.splice(index, 1);
+  ids.splice(target, 0, moved);
+  setScheduledTemplateIds(dayKey, ids);
+  renderDayRoutineCards(selectedDateKey || todayKey());
+  refresh();
+}
+
 function refresh() {
   renderHero();
   renderToday();
@@ -1449,9 +1726,20 @@ document.addEventListener("click", (event) => {
   const deleteEditStepButton = event.target.closest("[data-delete-edit-step]");
   const moveEditStepButton = event.target.closest("[data-move-edit-step]");
   const cancelRoutineEditButton = event.target.closest("[data-cancel-routine-edit]");
+  const openTemplateButton = event.target.closest("[data-open-template]");
+  const dayAddTemplateButton = event.target.closest("[data-day-add-template]");
+  const dayRemoveTemplateButton = event.target.closest("[data-remove-day-template]");
+  const dayMoveTemplateButton = event.target.closest("[data-move-day-template]");
   const historyDayButton = event.target.closest("[data-history-date]");
   const tabButton = event.target.closest("[data-view]");
 
+  if (openTemplateButton) openTemplate(openTemplateButton.dataset.openTemplate);
+  if (dayAddTemplateButton) {
+    const select = dayAddTemplateButton.parentElement?.querySelector("[data-day-template-select]");
+    addTemplateToDay(dayAddTemplateButton.dataset.dayAddTemplate, select?.value || "");
+  }
+  if (dayRemoveTemplateButton) removeTemplateFromDay(dayRemoveTemplateButton.dataset.day, Number(dayRemoveTemplateButton.dataset.removeDayTemplate));
+  if (dayMoveTemplateButton) moveTemplateInDay(dayMoveTemplateButton.dataset.day, Number(dayMoveTemplateButton.dataset.moveDayTemplate), Number(dayMoveTemplateButton.dataset.direction));
   if (addEditStepButton) addRoutineEditStep(els.stepList.querySelector("[data-add-step-position]")?.value || 0);
   if (deleteEditStepButton) deleteRoutineEditStep(Number(deleteEditStepButton.dataset.deleteEditStep));
   if (moveEditStepButton) moveRoutineEditStep(Number(moveEditStepButton.dataset.moveEditStep), Number(moveEditStepButton.dataset.direction));
@@ -1524,6 +1812,13 @@ els.historyNext.addEventListener("click", () => {
 els.addProduct.addEventListener("click", () => {
   addCatalogProduct(els.newProductName.value, els.newProductCategory.value);
   els.newProductName.value = "";
+  refresh();
+});
+els.addTodayTemplate.addEventListener("click", () => {
+  const templateId = els.todayTemplateSelect.value;
+  const currentIds = getDayTemplateIds(activeSkincareDate());
+  if (!templateId || currentIds.includes(templateId)) return;
+  setTodayTemplateIds([...currentIds, templateId]);
   refresh();
 });
 els.newProductCategory.addEventListener("change", () => {
